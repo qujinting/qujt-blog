@@ -1,5 +1,5 @@
 import type { CategoryDTO, PostSummaryDTO, TagDTO, UserDTO } from '@qujt/shared';
-import { get, post, put } from './client.js';
+import { get, post, put, del } from './client.js';
 import type { SiteInfo } from '../types.js';
 
 export interface PostDetailResp {
@@ -18,6 +18,14 @@ export const postsApi = {
 export const taxonomyApi = {
   categories: () => get<{ items: CategoryDTO[] }>('/categories'),
   tags: () => get<{ items: TagDTO[] }>('/tags'),
+};
+
+export const commentsApi = {
+  list: (slug: string, params?: { page?: number; pageSize?: number }) =>
+    get<{ items: import('@qujt/shared').CommentDTO[]; total: number }>('/posts/' + slug + '/comments', params),
+  create: (slug: string, body: { content: string; parentId?: number | null }) =>
+    post<{ comment: import('@qujt/shared').CommentDTO }>('/posts/' + slug + '/comments', body),
+  remove: (id: number) => del<{ ok: boolean }>('/comments/' + id),
 };
 
 export const authApi = {

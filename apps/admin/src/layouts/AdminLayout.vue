@@ -46,6 +46,7 @@ const menuOptions = computed(() => {
     { key: 'posts', label: '文章' },
     { key: 'posts/new', label: '写文章' },
     { key: 'media', label: '媒体库' },
+    { key: 'comments', label: '评论' },
     { key: 'categories', label: '分类' },
     { key: 'tags', label: '标签' },
   ];

@@ -34,3 +34,7 @@ export async function put<T>(url: string, body?: unknown): Promise<T> {
   const { data } = await api.put(url, body);
   return data as T;
 }
+export async function del<T>(url: string): Promise<T> {
+  const { data } = await api.delete(url);
+  return data as T;
+}

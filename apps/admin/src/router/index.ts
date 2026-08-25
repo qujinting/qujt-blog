@@ -13,6 +13,7 @@ const routes = [
       { path: 'posts/new', name: 'post-new', component: () => import('../views/PostEdit.vue'), meta: { title: '写文章' } },
       { path: 'posts/:id/edit', name: 'post-edit', component: () => import('../views/PostEdit.vue'), meta: { title: '编辑文章' } },
       { path: 'media', name: 'media', component: () => import('../views/MediaLibrary.vue'), meta: { title: '媒体库' } },
+      { path: 'comments', name: 'comments', component: () => import('../views/Comments.vue'), meta: { title: '评论' } },
       { path: 'categories', name: 'categories', component: () => import('../views/Categories.vue'), meta: { title: '分类' } },
       { path: 'tags', name: 'tags', component: () => import('../views/Tags.vue'), meta: { title: '标签' } },
       { path: 'users', name: 'users', component: () => import('../views/Users.vue'), meta: { title: '用户', admin: true } },

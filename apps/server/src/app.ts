@@ -16,6 +16,8 @@ import { adminSettingsRoutes } from './routes/admin-settings.js';
 import { adminUsersRoutes } from './routes/admin-users.js';
 import { adminMediaRoutes } from './routes/admin-media.js';
 import { adminStatsRoutes } from './routes/admin-stats.js';
+import { commentsRoutes } from './routes/comments.js';
+import { adminCommentsRoutes } from './routes/admin-comments.js';
 import type { AppConfig } from './config.js';
 
 export interface AppOptions {
@@ -86,6 +88,8 @@ export async function buildApp(opts: AppOptions = {}): Promise<FastifyInstance> 
   await app.register(adminUsersRoutes, { prefix: '/api/admin' });
   await app.register(adminMediaRoutes, { prefix: '/api/admin' });
   await app.register(adminStatsRoutes, { prefix: '/api/admin' });
+  await app.register(commentsRoutes, { prefix: '/api' });
+  await app.register(adminCommentsRoutes, { prefix: '/api/admin' });
 
   return app;
 }

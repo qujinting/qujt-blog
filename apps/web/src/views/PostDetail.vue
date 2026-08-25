@@ -30,6 +30,7 @@
             </div>
           </n-grid-item>
         </n-grid>
+        <CommentSection v-if="post && !post.locked" :slug="post.slug" />
       </template>
 
       <n-card v-else-if="post && post.locked" style="max-width:420px; margin:70px auto;">
@@ -60,6 +61,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useMessage } from 'naive-ui';
 import dayjs from 'dayjs';
 import { postsApi } from '../api/index.js';
+import CommentSection from '../components/CommentSection.vue';
 import type { PostDetailResp } from '../api/index.js';
 
 const route = useRoute();

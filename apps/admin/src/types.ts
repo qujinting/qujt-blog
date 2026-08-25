@@ -1,5 +1,5 @@
 // 管理端本地类型（复用 @qujt/shared 的基础 DTO）
-export type { UserDTO, PostSummaryDTO, PostDetailDTO, AdminPostDTO, CategoryDTO, TagDTO, Role, PostVisibility, PostStatus, RegistrationMode } from '@qujt/shared';
+export type { UserDTO, PostSummaryDTO, PostDetailDTO, AdminPostDTO, CategoryDTO, TagDTO, Role, PostVisibility, PostStatus, RegistrationMode, AdminCommentDTO, CommentDTO } from '@qujt/shared';
 
 export interface Settings {
   siteName: string;

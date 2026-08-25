@@ -1,6 +1,6 @@
 import type { CategoryDTO, InviteCodeDTO, TagDTO, UserDTO } from '@qujt/shared';
 import { get, post, put, del, api } from './client.js';
-import type { AdminPostDTO, MediaDTO, Settings, Stats, UserListRow } from '../types.js';
+import type { AdminCommentDTO, AdminPostDTO, MediaDTO, Settings, Stats, UserListRow } from '../types.js';
 
 export const authApi = {
   me: () => get<{ user: UserDTO }>('/auth/me'),
@@ -65,6 +65,11 @@ export interface InviteCreateInput {
   expiresAt?: string | null;
   note?: string;
 }
+export const adminCommentsApi = {
+  list: (params?: { status?: string; page?: number; pageSize?: number; q?: string }) => get<{ items: AdminCommentDTO[]; total: number }>('/admin/comments', params),
+  setStatus: (id: number, status: 'pending' | 'approved' | 'spam' | 'deleted') => post<{ ok: boolean }>('/admin/comments/' + id + '/status', { status }),
+};
+
 export const invitesApi = {
   list: (params?: { page?: number; pageSize?: number }) => get<{ items: InviteCodeDTO[]; total: number }>('/admin/invite-codes', params),
   create: (body: InviteCreateInput) => post<{ items: InviteCodeDTO[]; count: number }>('/admin/invite-codes', body),

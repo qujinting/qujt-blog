@@ -121,3 +121,29 @@ export interface AdminPostDTO extends PostDetailDTO {
   authorId: number;
   passwordProtected: boolean;
 }
+// ===== 评论 DTO =====
+export interface CommentUserDTO {
+  id: number;
+  nickname: string;
+  avatar: string | null;
+}
+
+export interface CommentDTO {
+  id: number;
+  postId: number;
+  parentId: number | null;
+  rootId: number | null;
+  replyToUid: number | null;
+  replyToNickname: string | null;
+  content: string;
+  user: CommentUserDTO;
+  createdAt: string;
+}
+
+export interface AdminCommentDTO extends CommentDTO {
+  status: CommentStatus;
+  ip: string | null;
+  username: string;
+  postId: number;
+  postTitle: string;
+}
