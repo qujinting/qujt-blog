@@ -1,0 +1,15 @@
+{
+  "name": "qujt-blog",
+  "private": true,
+  "packageManager": "pnpm@11.7.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev:server": "pnpm --filter @qujt/server dev",
+    "build:server": "pnpm --filter @qujt/server build",
+    "start:server": "pnpm --filter @qujt/server start",
+    "test": "pnpm --filter @qujt/server test",
+    "typecheck": "pnpm -r --if-present typecheck"
+  }
+}
