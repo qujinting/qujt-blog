@@ -1,6 +1,7 @@
 import argon2 from 'argon2';
 import type Database from 'better-sqlite3';
 import type { Role, UserDTO, UserStatus } from '@qujt/shared';
+import { AppError } from '../lib/errors.js';
 
 export interface DbUser {
   id: number;
@@ -49,4 +50,50 @@ export function toUserDTO(u: DbUser): UserDTO {
     inviteCodeId: u.invite_code_id,
     createdAt: u.created_at,
   };
+}
+export interface UserListRow {
+  id: number;
+  username: string;
+  email: string;
+  nickname: string;
+  role: Role;
+  status: UserStatus;
+  invited_by_username: string | null;
+  invite_code: string | null;
+  created_at: string;
+}
+
+export function listUsers(db: Database.Database, opts: { page: number; pageSize: number; q?: string }) {
+  const params: unknown[] = [];
+  let where = '1=1';
+  if (opts.q?.trim()) {
+    where += ' AND (u.username LIKE ? OR u.email LIKE ? OR u.nickname LIKE ?)';
+    const like = `%${opts.q.trim()}%`;
+    params.push(like, like, like);
+  }
+  const rows = db
+    .prepare(
+      `SELECT u.id, u.username, u.email, u.nickname, u.role, u.status, u.created_at,
+              inv.username AS invited_by_username, c.code AS invite_code
+       FROM users u
+       LEFT JOIN users inv ON inv.id = u.invited_by
+       LEFT JOIN invite_codes c ON c.id = u.invite_code_id
+       WHERE ${where}
+       ORDER BY u.id DESC LIMIT ? OFFSET ?`,
+    )
+    .all(...params, opts.pageSize, (opts.page - 1) * opts.pageSize) as unknown as UserListRow[];
+  const total = (
+    db.prepare(`SELECT COUNT(*) AS c FROM users u WHERE ${where}`).get(...params) as { c: number }
+  ).c;
+  return { items: rows, total };
+}
+
+export function updateUserRole(db: Database.Database, id: number, role: Role): void {
+  const res = db.prepare('UPDATE users SET role = ? WHERE id = ?').run(role, id);
+  if (!res.changes) throw new AppError(404, 'USER_NOT_FOUND', '用户不存在');
+}
+
+export function updateUserStatus(db: Database.Database, id: number, status: UserStatus): void {
+  const res = db.prepare('UPDATE users SET status = ? WHERE id = ?').run(status, id);
+  if (!res.changes) throw new AppError(404, 'USER_NOT_FOUND', '用户不存在');
 }

@@ -24,3 +24,29 @@ export function getRegistrationMode(db: Database.Database): RegistrationMode {
   const v = getSetting<RegistrationMode>(db, SETTINGS_KEYS.registrationMode);
   return v && REGISTRATION_MODES.includes(v) ? v : 'invite';
 }
+export interface SiteSettings {
+  siteName: string;
+  siteDescription: string;
+  icp: string;
+  registrationMode: RegistrationMode;
+  commentModeration: boolean;
+}
+
+export function getSiteSettings(db: Database.Database): SiteSettings {
+  return {
+    siteName: getSetting(db, SETTINGS_KEYS.siteName) ?? 'qujt-blog',
+    siteDescription: getSetting(db, SETTINGS_KEYS.siteDescription) ?? '',
+    icp: getSetting(db, SETTINGS_KEYS.icp) ?? '',
+    registrationMode: getRegistrationMode(db),
+    commentModeration: (getSetting<boolean>(db, SETTINGS_KEYS.commentModeration) ?? true) === true,
+  };
+}
+
+export function updateSiteSettings(db: Database.Database, patch: Partial<SiteSettings>): SiteSettings {
+  if (patch.siteName !== undefined) setSetting(db, SETTINGS_KEYS.siteName, patch.siteName.trim() || 'qujt-blog');
+  if (patch.siteDescription !== undefined) setSetting(db, SETTINGS_KEYS.siteDescription, patch.siteDescription ?? '');
+  if (patch.icp !== undefined) setSetting(db, SETTINGS_KEYS.icp, patch.icp ?? '');
+  if (patch.registrationMode !== undefined) setSetting(db, SETTINGS_KEYS.registrationMode, patch.registrationMode);
+  if (patch.commentModeration !== undefined) setSetting(db, SETTINGS_KEYS.commentModeration, patch.commentModeration);
+  return getSiteSettings(db);
+}

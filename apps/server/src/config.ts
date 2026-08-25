@@ -12,6 +12,11 @@ const EnvSchema = z.object({
   ADMIN_USERNAME: z.string().min(2).default('admin'),
   ADMIN_PASSWORD: z.string().min(8).optional(),
   ADMIN_EMAIL: z.email().optional(),
+  OSS_BUCKET: z.string().optional(),
+  OSS_REGION: z.string().optional(),
+  OSS_ACCESS_KEY_ID: z.string().optional(),
+  OSS_ACCESS_KEY_SECRET: z.string().optional(),
+  OSS_CDN_DOMAIN: z.string().optional(),
 });
 
 export interface AppConfig {
@@ -25,6 +30,11 @@ export interface AppConfig {
   ADMIN_USERNAME: string;
   ADMIN_PASSWORD?: string;
   ADMIN_EMAIL?: string;
+  OSS_BUCKET?: string;
+  OSS_REGION?: string;
+  OSS_ACCESS_KEY_ID?: string;
+  OSS_ACCESS_KEY_SECRET?: string;
+  OSS_CDN_DOMAIN?: string;
 }
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {

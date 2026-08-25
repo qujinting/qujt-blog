@@ -12,6 +12,10 @@ import { adminRoutes } from './routes/admin.js';
 import { publicPostsRoutes } from './routes/public-posts.js';
 import { adminPostsRoutes } from './routes/admin-posts.js';
 import { adminTaxonomyRoutes } from './routes/admin-taxonomy.js';
+import { adminSettingsRoutes } from './routes/admin-settings.js';
+import { adminUsersRoutes } from './routes/admin-users.js';
+import { adminMediaRoutes } from './routes/admin-media.js';
+import { adminStatsRoutes } from './routes/admin-stats.js';
 import type { AppConfig } from './config.js';
 
 export interface AppOptions {
@@ -78,6 +82,10 @@ export async function buildApp(opts: AppOptions = {}): Promise<FastifyInstance> 
   await app.register(adminRoutes, { prefix: '/api/admin' });
   await app.register(adminPostsRoutes, { prefix: '/api/admin' });
   await app.register(adminTaxonomyRoutes, { prefix: '/api/admin' });
+  await app.register(adminSettingsRoutes, { prefix: '/api/admin' });
+  await app.register(adminUsersRoutes, { prefix: '/api/admin' });
+  await app.register(adminMediaRoutes, { prefix: '/api/admin' });
+  await app.register(adminStatsRoutes, { prefix: '/api/admin' });
 
   return app;
 }

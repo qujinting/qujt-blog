@@ -10,6 +10,8 @@
     "build:server": "pnpm --filter @qujt/server build",
     "start:server": "pnpm --filter @qujt/server start",
     "test": "pnpm --filter @qujt/server test",
-    "typecheck": "pnpm -r --if-present typecheck"
+    "typecheck": "pnpm -r --if-present typecheck",
+    "dev:admin": "pnpm --filter @qujt/admin dev",
+    "build:admin": "pnpm --filter @qujt/admin build"
   }
 }

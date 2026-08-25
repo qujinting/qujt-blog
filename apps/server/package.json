@@ -34,7 +34,8 @@
     "markdown-it-sup": "^2.0.0",
     "markdown-it-task-lists": "^2.1.1",
     "node-cron": "^3.0.3",
-    "pinyin-pro": "^3.26.0"
+    "pinyin-pro": "^3.26.0",
+    "ali-oss": "^6.22.0"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.13",
@@ -46,6 +47,7 @@
     "@types/adm-zip": "^0.5.5",
     "@types/js-yaml": "^4.0.9",
     "@types/node-cron": "^3.0.11",
-    "@types/markdown-it": "^14.1.2"
+    "@types/markdown-it": "^14.1.2",
+    "@types/ali-oss": "^6.16.0"
   }
 }

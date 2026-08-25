@@ -50,7 +50,19 @@ pnpm dev:server
 
 **文章发布**：MD 在服务端编译为 HTML（代码高亮、KaTeX、DOMPurify 消毒、TOC/摘要/字数/封面提取），访客看到的是编译产物；`settings.registration_mode` 控制注册模式；定时发布由 node-cron 每分钟检查。
 
+## 管理后台（P2）
+
+```bash
+pnpm dev:admin     # 开发：http://localhost:5175/admin/（/api 已代理到后端 3000）
+pnpm build:admin   # 构建 → apps/admin/dist（生产由 Nginx 托管在 /admin）
+```
+
+功能：仪表盘、文章列表/编辑（md-editor-v3，图片上传 OSS）、媒体库、分类、标签、用户、邀请码、设置。
+
+**OSS 图片上传**：服务端代理上传，需在 `apps/server/.env` 配置 `OSS_BUCKET` / `OSS_REGION`（形如 `oss-cn-hangzhou`）/ `OSS_ACCESS_KEY_ID` / `OSS_ACCESS_KEY_SECRET`，配置后重启生效；未配置时媒体上传返回明确提示。
+
 ## 测试
+
 
 ```bash
 pnpm test        # vitest
