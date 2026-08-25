@@ -61,7 +61,17 @@ pnpm build:admin   # 构建 → apps/admin/dist（生产由 Nginx 托管在 /adm
 
 **OSS 图片上传**：服务端代理上传，需在 `apps/server/.env` 配置 `OSS_BUCKET` / `OSS_REGION`（形如 `oss-cn-hangzhou`）/ `OSS_ACCESS_KEY_ID` / `OSS_ACCESS_KEY_SECRET`，配置后重启生效；未配置时媒体上传返回明确提示。
 
+## 前台（P3）
+
+```bash
+pnpm dev:web      # 开发：http://localhost:5174/（/api 代理到后端 3000）
+pnpm build:web    # 构建 → apps/web/dist（生产由 Nginx 托管在 /）
+```
+
+功能：首页（文章卡片/分页/分类标签筛选/搜索）、文章详情（服务端编译 HTML 渲染 + TOC + 密码解锁 + 登录门）、登录/注册（按注册模式显示邀请码）、个人中心（昵称/头像/改密码）。
+
 ## 测试
+
 
 
 ```bash

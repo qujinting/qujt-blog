@@ -12,6 +12,8 @@
     "test": "pnpm --filter @qujt/server test",
     "typecheck": "pnpm -r --if-present typecheck",
     "dev:admin": "pnpm --filter @qujt/admin dev",
-    "build:admin": "pnpm --filter @qujt/admin build"
+    "build:admin": "pnpm --filter @qujt/admin build",
+    "dev:web": "pnpm --filter @qujt/web dev",
+    "build:web": "pnpm --filter @qujt/web build"
   }
 }

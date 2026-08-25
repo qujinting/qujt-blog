@@ -97,3 +97,11 @@ export function updateUserStatus(db: Database.Database, id: number, status: User
   const res = db.prepare('UPDATE users SET status = ? WHERE id = ?').run(status, id);
   if (!res.changes) throw new AppError(404, 'USER_NOT_FOUND', '用户不存在');
 }
+export function updateUserProfile(db: Database.Database, id: number, patch: { nickname?: string; avatar?: string | null }): DbUser {
+  const cur = findUserById(db, id);
+  if (!cur) throw new AppError(404, 'USER_NOT_FOUND', '用户不存在');
+  const nickname = patch.nickname?.trim() || cur.nickname;
+  const avatar = patch.avatar !== undefined ? patch.avatar : cur.avatar;
+  db.prepare("UPDATE users SET nickname = ?, avatar = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = ?").run(nickname, avatar, id);
+  return findUserById(db, id)!;
+}

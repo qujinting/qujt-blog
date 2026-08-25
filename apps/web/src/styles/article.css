@@ -1,0 +1,56 @@
+/* 文章正文排版（服务端已编译消毒的 HTML） */
+.article-body {
+  font-size: 16px;
+  line-height: 1.9;
+  color: var(--n-text-color, #333);
+  word-break: break-word;
+}
+.article-body h1, .article-body h2, .article-body h3, .article-body h4, .article-body h5, .article-body h6 {
+  margin: 1.6em 0 0.8em;
+  line-height: 1.4;
+  font-weight: 600;
+  scroll-margin-top: 80px;
+}
+.article-body h1 { font-size: 1.7em; padding-bottom: 0.4em; border-bottom: 1px solid rgba(128,128,128,0.25); }
+.article-body h2 { font-size: 1.45em; padding-bottom: 0.35em; border-bottom: 1px solid rgba(128,128,128,0.2); }
+.article-body h3 { font-size: 1.25em; }
+.article-body h4 { font-size: 1.1em; }
+.article-body p { margin: 0.9em 0; }
+.article-body a { color: #18a058; text-decoration: none; }
+.article-body a:hover { text-decoration: underline; }
+.article-body img { max-width: 100%; height: auto; border-radius: 6px; margin: 0.5em 0; display: block; }
+.article-body blockquote {
+  margin: 1em 0;
+  padding: 0.3em 1em;
+  border-left: 4px solid #18a058;
+  background: rgba(128,128,128,0.07);
+  border-radius: 0 6px 6px 0;
+  color: rgba(128,128,128,0.9);
+}
+.article-body code {
+  background: rgba(128,128,128,0.12);
+  padding: 0.15em 0.4em;
+  border-radius: 4px;
+  font-size: 0.9em;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+.article-body pre {
+  background: #f6f8fa;
+  border-radius: 8px;
+  padding: 1em;
+  overflow-x: auto;
+  line-height: 1.6;
+  margin: 1em 0;
+}
+.dark .article-body pre { background: #161b22; }
+.article-body pre code { background: transparent; padding: 0; font-size: 0.88em; }
+.article-body table { border-collapse: collapse; margin: 1em 0; width: 100%; display: block; overflow-x: auto; }
+.article-body th, .article-body td { border: 1px solid rgba(128,128,128,0.3); padding: 0.5em 0.9em; }
+.article-body th { background: rgba(128,128,128,0.08); font-weight: 600; }
+.article-body ul, .article-body ol { padding-left: 1.6em; margin: 0.8em 0; }
+.article-body li { margin: 0.3em 0; }
+.article-body input[type='checkbox'] { margin-right: 0.4em; }
+.article-body hr { border: none; border-top: 1px solid rgba(128,128,128,0.25); margin: 1.8em 0; }
+.article-body .katex-display { overflow-x: auto; overflow-y: hidden; padding: 0.4em 0; }
+.article-body .footnotes { font-size: 0.88em; color: rgba(128,128,128,0.9); border-top: 1px solid rgba(128,128,128,0.2); margin-top: 2em; padding-top: 1em; }
+.article-body .footnotes li { margin: 0.4em 0; }

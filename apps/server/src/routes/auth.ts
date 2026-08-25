@@ -10,7 +10,7 @@ import {
   rotateRefresh,
 } from '../services/session.js';
 import { authenticate } from '../plugins/auth.js';
-import { toUserDTO } from '../services/users.js';
+import { hashPassword, toUserDTO, updateUserProfile, verifyPassword } from '../services/users.js';
 
 const registerSchema = z.object({
   username: z
@@ -71,5 +71,32 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
   app.get('/me', async (req, reply) => {
     const user = await authenticate(app, req);
     return { user: toUserDTO(user) };
+  });
+
+  app.put('/me', async (req) => {
+    const user = await authenticate(app, req);
+    const body = z
+      .object({
+        nickname: z.string().trim().min(1, '昵称不能为空').max(30).optional(),
+        avatar: z.string().trim().max(500).nullable().optional(),
+      })
+      .parse(req.body ?? {});
+    const updated = updateUserProfile(app.db, user.id, body);
+    return { user: toUserDTO(updated) };
+  });
+
+  app.post('/me/password', async (req) => {
+    const user = await authenticate(app, req);
+    const body = z
+      .object({
+        oldPassword: z.string().min(1, '请输入原密码'),
+        newPassword: z.string().min(8, '新密码至少 8 位').max(72),
+      })
+      .parse(req.body);
+    const ok = await verifyPassword(user.password_hash, body.oldPassword);
+    if (!ok) throw err(400, 'WRONG_OLD_PASSWORD', '原密码错误');
+    const hash = await hashPassword(body.newPassword);
+    app.db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(hash, user.id);
+    return { ok: true };
   });
 }
