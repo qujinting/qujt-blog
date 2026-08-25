@@ -35,7 +35,8 @@
     "markdown-it-task-lists": "^2.1.1",
     "node-cron": "^3.0.3",
     "pinyin-pro": "^3.26.0",
-    "ali-oss": "^6.22.0"
+    "ali-oss": "^6.22.0",
+    "dotenv": "^16.4.7"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.13",

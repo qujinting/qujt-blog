@@ -30,15 +30,24 @@ export interface MediaDTO {
 }
 
 export function isOssConfigured(cfg: AppConfig): boolean {
-  return !!(cfg.OSS_BUCKET && cfg.OSS_REGION && cfg.OSS_ACCESS_KEY_ID && cfg.OSS_ACCESS_KEY_SECRET);
+  return !!(cfg.OSS_BUCKET && (cfg.OSS_REGION || cfg.OSS_ENDPOINT) && cfg.OSS_ACCESS_KEY_ID && cfg.OSS_ACCESS_KEY_SECRET);
+}
+
+/** 解析 OSS endpoint（优先使用 OSS_ENDPOINT，否则按 region 拼接） */
+export function ossEndpoint(cfg: AppConfig): string {
+  if (cfg.OSS_ENDPOINT) return cfg.OSS_ENDPOINT.startsWith('http') ? cfg.OSS_ENDPOINT : 'https://' + cfg.OSS_ENDPOINT;
+  const region = cfg.OSS_REGION ?? '';
+  const host = region.startsWith('oss-') ? region : 'oss-' + region;
+  return 'https://' + host + '.aliyuncs.com';
 }
 
 export function requireOssClient(cfg: AppConfig): OSS {
   if (!isOssConfigured(cfg)) {
-    throw err(503, 'OSS_NOT_CONFIGURED', 'OSS 未配置：请设置 OSS_BUCKET / OSS_REGION / OSS_ACCESS_KEY_ID / OSS_ACCESS_KEY_SECRET');
+    throw err(503, 'OSS_NOT_CONFIGURED', 'OSS 未配置：请设置 OSS_BUCKET / OSS_REGION 或 OSS_ENDPOINT / OSS_ACCESS_KEY_ID / OSS_ACCESS_KEY_SECRET');
   }
   return new OSS({
-    region: cfg.OSS_REGION!,
+    endpoint: ossEndpoint(cfg),
+    region: cfg.OSS_REGION,
     bucket: cfg.OSS_BUCKET!,
     accessKeyId: cfg.OSS_ACCESS_KEY_ID!,
     accessKeySecret: cfg.OSS_ACCESS_KEY_SECRET!,
@@ -48,7 +57,8 @@ export function requireOssClient(cfg: AppConfig): OSS {
 
 export function publicUrl(cfg: AppConfig, key: string): string {
   if (cfg.OSS_CDN_DOMAIN) return `https://${cfg.OSS_CDN_DOMAIN}/${key}`;
-  return `https://${cfg.OSS_BUCKET}.oss-${cfg.OSS_REGION}.aliyuncs.com/${key}`;
+  const host = ossEndpoint(cfg).replace(/^https?:\/\//, '');
+  return `https://${cfg.OSS_BUCKET}.${host}/${key}`;
 }
 
 const ALLOWED_MIME = new Set(['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml', 'image/avif']);

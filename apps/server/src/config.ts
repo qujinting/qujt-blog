@@ -16,6 +16,7 @@ const EnvSchema = z.object({
   OSS_REGION: z.string().optional(),
   OSS_ACCESS_KEY_ID: z.string().optional(),
   OSS_ACCESS_KEY_SECRET: z.string().optional(),
+  OSS_ENDPOINT: z.string().optional(),
   OSS_CDN_DOMAIN: z.string().optional(),
 });
 
@@ -34,6 +35,7 @@ export interface AppConfig {
   OSS_REGION?: string;
   OSS_ACCESS_KEY_ID?: string;
   OSS_ACCESS_KEY_SECRET?: string;
+  OSS_ENDPOINT?: string;
   OSS_CDN_DOMAIN?: string;
 }
 
