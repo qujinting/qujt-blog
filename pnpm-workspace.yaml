@@ -2,7 +2,8 @@ packages:
   - apps/*
   - packages/*
 
+# better-sqlite3 预编译由构建流程手动放置（见 README），显式禁止其安装脚本
 allowBuilds:
   argon2: true
-  better-sqlite3: true
   esbuild: true
+  better-sqlite3: false

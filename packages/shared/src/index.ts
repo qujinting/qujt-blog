@@ -75,3 +75,49 @@ export interface SiteInfoDTO {
   registrationMode: RegistrationMode;
   commentModeration: boolean;
 }
+// ===== 文章/分类/标签 DTO =====
+export interface CategoryDTO {
+  id: number;
+  name: string;
+  slug: string;
+  description: string | null;
+  sort: number;
+  postCount?: number;
+}
+
+export interface TagDTO {
+  id: number;
+  name: string;
+  slug: string;
+  postCount?: number;
+}
+
+export interface PostSummaryDTO {
+  id: number;
+  slug: string;
+  title: string;
+  summary: string | null;
+  coverImage: string | null;
+  category: CategoryDTO | null;
+  tags: TagDTO[];
+  visibility: PostVisibility;
+  wordCount: number;
+  viewCount: number;
+  commentCount: number;
+  publishAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PostDetailDTO extends PostSummaryDTO {
+  contentHtml: string;
+  toc: { level: number; id: string; text: string }[];
+}
+
+/** 管理端完整文章（含 MD 源码） */
+export interface AdminPostDTO extends PostDetailDTO {
+  contentMd: string;
+  status: PostStatus;
+  authorId: number;
+  passwordProtected: boolean;
+}

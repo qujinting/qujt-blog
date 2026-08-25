@@ -2,12 +2,16 @@ import Fastify, { type FastifyInstance } from 'fastify';
 import cookie from '@fastify/cookie';
 import jwt from '@fastify/jwt';
 import rateLimit from '@fastify/rate-limit';
+import multipart from '@fastify/multipart';
 import { ZodError } from 'zod';
 import { openDb } from './db/connection.js';
 import { AppError } from './lib/errors.js';
 import { healthRoutes } from './routes/health.js';
 import { authRoutes } from './routes/auth.js';
 import { adminRoutes } from './routes/admin.js';
+import { publicPostsRoutes } from './routes/public-posts.js';
+import { adminPostsRoutes } from './routes/admin-posts.js';
+import { adminTaxonomyRoutes } from './routes/admin-taxonomy.js';
 import type { AppConfig } from './config.js';
 
 export interface AppOptions {
@@ -41,6 +45,7 @@ export async function buildApp(opts: AppOptions = {}): Promise<FastifyInstance> 
     cookie: { cookieName: 'access_token', signed: false },
   });
   await app.register(rateLimit, { max: 300, timeWindow: '1 minute' });
+  await app.register(multipart, { limits: { fileSize: 50 * 1024 * 1024 } });
 
   app.setErrorHandler(async (error, req, reply) => {
     if (error instanceof AppError) {
@@ -68,8 +73,11 @@ export async function buildApp(opts: AppOptions = {}): Promise<FastifyInstance> 
   });
 
   await app.register(healthRoutes, { prefix: '/api' });
+  await app.register(publicPostsRoutes, { prefix: '/api' });
   await app.register(authRoutes, { prefix: '/api/auth' });
   await app.register(adminRoutes, { prefix: '/api/admin' });
+  await app.register(adminPostsRoutes, { prefix: '/api/admin' });
+  await app.register(adminTaxonomyRoutes, { prefix: '/api/admin' });
 
   return app;
 }

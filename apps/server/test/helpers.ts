@@ -77,3 +77,37 @@ export function seedOwner(app: FastifyInstance): number {
     .run();
   return Number(info.lastInsertRowid);
 }
+/** 创建管理员并登录，返回 cookie */
+export async function adminSession(app: FastifyInstance): Promise<Record<string, string>> {
+  const admin = await seedAdmin(app);
+  const login = await app.inject({
+    method: 'POST',
+    url: '/api/auth/login',
+    payload: { account: admin.username, password: admin.password },
+  });
+  if (login.statusCode !== 200) throw new Error('admin login failed: ' + login.body);
+  return parseCookies(login);
+}
+
+export function adminHeaders(cookies: Record<string, string>) {
+  return { cookie: cookieHeader(cookies), 'x-requested-with': 'XMLHttpRequest' };
+}
+
+/** 手工构造 multipart body（避免 FormData 兼容问题） */
+export function multipartBody(
+  files: Record<string, { filename: string; content: string | Buffer; type?: string }>,
+): { body: Buffer; contentType: string } {
+  const boundary = '----qujt-test-' + Math.random().toString(36).slice(2);
+  const chunks: Buffer[] = [];
+  for (const [name, f] of Object.entries(files)) {
+    chunks.push(
+      Buffer.from(
+        `--${boundary}\r\nContent-Disposition: form-data; name="${name}"; filename="${f.filename}"\r\nContent-Type: ${f.type ?? 'application/octet-stream'}\r\n\r\n`,
+      ),
+    );
+    chunks.push(Buffer.isBuffer(f.content) ? f.content : Buffer.from(f.content));
+    chunks.push(Buffer.from('\r\n'));
+  }
+  chunks.push(Buffer.from(`--${boundary}--\r\n`));
+  return { body: Buffer.concat(chunks), contentType: `multipart/form-data; boundary=${boundary}` };
+}

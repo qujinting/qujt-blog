@@ -42,6 +42,14 @@ pnpm dev:server
 注册模式默认 `invite`（邀请制）：`POST /api/admin/invite-codes` 生成邀请码（需管理员登录）。
 通过 `settings.registration_mode`（closed/invite/open）切换注册开关。
 
+## 文章 API（P1 已实现）
+
+**前台公开**（/api）：`GET /site`（站点信息+注册模式）、`GET /posts`（列表，含分类/标签/搜索过滤与权限过滤）、`GET /posts/:slug`（四级权限矩阵：public/login/password/private）、`POST /posts/:slug/unlock`（密码解锁）、`GET /categories`、`GET /tags`
+
+**后台**（/api/admin，需登录 + CSRF 头）：文章 CRUD / 发布 / 下线 / 导入（.md/.zip，返回草稿 + 未解析图片清单）、分类/标签 CRUD、邀请码管理
+
+**文章发布**：MD 在服务端编译为 HTML（代码高亮、KaTeX、DOMPurify 消毒、TOC/摘要/字数/封面提取），访客看到的是编译产物；`settings.registration_mode` 控制注册模式；定时发布由 node-cron 每分钟检查。
+
 ## 测试
 
 ```bash
