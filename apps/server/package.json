@@ -1,0 +1,31 @@
+{
+  "name": "@qujt/server",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsup",
+    "start": "node dist/index.js",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@qujt/shared": "workspace:*",
+    "@fastify/cookie": "^11.0.0",
+    "@fastify/jwt": "^9.1.0",
+    "@fastify/rate-limit": "^10.3.0",
+    "argon2": "^0.41.1",
+    "better-sqlite3": "^12.4.0",
+    "fastify": "^5.6.0",
+    "zod": "^4.1.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^24.0.0",
+    "tsx": "^4.20.0",
+    "tsup": "^8.5.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.2.0"
+  }
+}
