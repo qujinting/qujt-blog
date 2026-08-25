@@ -11,6 +11,8 @@ const external = Object.keys(pkg.dependencies ?? {})
 
 export default defineConfig({
   entry: ['src/index.ts'],
+  // 工作区包必须打进产物（服务器上无 TS 运行时）
+  noExternal: ['@qujt/shared'],
   format: ['esm'],
   target: 'node20',
   clean: true,

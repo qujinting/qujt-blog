@@ -70,7 +70,16 @@ pnpm build:web    # 构建 → apps/web/dist（生产由 Nginx 托管在 /）
 
 功能：首页（文章卡片/分页/分类标签筛选/搜索）、文章详情（服务端编译 HTML 渲染 + TOC + 密码解锁 + 登录门）、登录/注册（按注册模式显示邀请码）、个人中心（昵称/头像/改密码）。
 
+## 部署
+
+详见 [deploy/DEPLOY.md](deploy/DEPLOY.md)。已上线：`http://115.29.149.137`（前台）/ `/admin`（后台）。
+
+```bash
+ADMIN_PASSWORD=xxx node deploy/deploy.mjs   # 一键重新部署（构建→上传→重启）
+```
+
 ## 测试
+
 
 
 
