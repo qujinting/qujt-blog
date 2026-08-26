@@ -1,86 +1,149 @@
 <template>
-  <div style="min-height:100vh; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg,#1f2937,#111827);">
-    <n-card style="width:400px;" title="注册">
-      <n-alert v-if="mode === 'closed'" type="warning" style="margin-bottom:14px;">当前注册已关闭，请联系管理员。</n-alert>
-      <n-form v-else ref="formRef" :model="form" :rules="rules" size="large">
-        <n-form-item label="用户名" path="username">
-          <n-input v-model:value="form.username" placeholder="3-20 位字母/数字/下划线" />
-        </n-form-item>
-        <n-form-item label="邮箱" path="email">
-          <n-input v-model:value="form.email" placeholder="example@mail.com" />
-        </n-form-item>
-        <n-form-item label="密码" path="password">
-          <n-input v-model:value="form.password" type="password" placeholder="至少 8 位" />
-        </n-form-item>
-        <n-form-item v-if="mode === 'invite'" label="邀请码" path="inviteCode">
-          <n-input v-model:value="form.inviteCode" placeholder="请输入邀请码" />
-        </n-form-item>
-        <n-button type="primary" block :loading="loading" @click="submit">注册并登录</n-button>
-      </n-form>
-      <div style="text-align:center; margin-top:14px; font-size:13px;">
-        已有账号？
-        <a href="javascript:void(0)" style="color:#18a058;" @click="router.push('/login')">去登录</a>
+  <AuthShell :is-typing="isTyping" :show-password="showPassword" :password-length="form.password.length" :login-failed="loginFailed" :login-success="loginSuccess">
+    <div class="csr-form">
+      <div class="csr-mobile-logo">
+        <span class="csr-logo-mark">{{ logoLetter }}</span>
+        <span>{{ site.info?.siteName || 'qujt-blog' }}</span>
       </div>
-    </n-card>
-  </div>
+
+      <div class="csr-header">
+        <h1 class="csr-title">创建账号 🎉</h1>
+        <p class="csr-subtitle">{{ mode === 'closed' ? '当前注册已关闭' : '加入我们，开始创作' }}</p>
+      </div>
+
+      <n-alert v-if="mode === 'closed'" type="warning" style="margin-bottom:14px;">当前注册已关闭，请联系管理员。</n-alert>
+
+      <template v-else>
+        <div class="csr-field">
+          <label class="csr-label">用户名</label>
+          <n-input v-model:value="form.username" placeholder="3-20 位字母/数字/下划线" size="large" :round="true" :status="errors.username ? 'error' : undefined" />
+          <p v-if="errors.username" class="csr-error">{{ errors.username }}</p>
+        </div>
+
+        <div class="csr-field">
+          <label class="csr-label">邮箱</label>
+          <n-input v-model:value="form.email" placeholder="example@mail.com" size="large" :round="true" :status="errors.email ? 'error' : undefined" />
+          <p v-if="errors.email" class="csr-error">{{ errors.email }}</p>
+        </div>
+
+        <div class="csr-field">
+          <label class="csr-label">密码</label>
+          <n-input
+            v-model:value="form.password"
+            :type="showPassword ? 'text' : 'password'"
+            placeholder="至少 8 位"
+            size="large"
+            :round="true"
+            :status="errors.password ? 'error' : undefined"
+            @focus="isTyping = true"
+            @blur="isTyping = false"
+          >
+            <template #suffix>
+              <n-button quaternary circle size="small" @click="showPassword = !showPassword">
+                <span style="font-size:15px;">{{ showPassword ? '🙈' : '👁️' }}</span>
+              </n-button>
+            </template>
+          </n-input>
+          <p v-if="errors.password" class="csr-error">{{ errors.password }}</p>
+        </div>
+
+        <div v-if="mode === 'invite'" class="csr-field">
+          <label class="csr-label">邀请码</label>
+          <n-input v-model:value="form.inviteCode" placeholder="请输入邀请码" size="large" :round="true" :status="errors.inviteCode ? 'error' : undefined" />
+          <p v-if="errors.inviteCode" class="csr-error">{{ errors.inviteCode }}</p>
+        </div>
+
+        <div v-if="errorMessage" class="csr-alert">{{ errorMessage }}</div>
+
+        <n-button type="primary" size="large" block :round="true" :loading="loading" style="margin-top:8px;" @click="submit">
+          {{ loading ? '注册中…' : '注册并登录' }}
+        </n-button>
+      </template>
+
+      <div class="csr-link-row">
+        已有账号？<a @click="router.push('/login')">去登录</a>
+      </div>
+    </div>
+  </AuthShell>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useMessage } from 'naive-ui';
-import type { FormInst, FormRules } from 'naive-ui';
+import AuthShell from '../components/login/AuthShell.vue';
 import { authApi } from '../api/index.js';
-import { useSiteStore } from '../stores/site.js';
 import { useAuthStore } from '../stores/auth.js';
+import { useSiteStore } from '../stores/site.js';
 
 const router = useRouter();
 const message = useMessage();
 const site = useSiteStore();
 const auth = useAuthStore();
-const formRef = ref<FormInst | null>(null);
+
 const loading = ref(false);
-const mode = computed(() => site.info?.registrationMode ?? 'invite');
+const showPassword = ref(false);
+const isTyping = ref(false);
+const loginFailed = ref(false);
+const loginSuccess = ref(false);
+const errorMessage = ref('');
+const errors = ref<Record<string, string>>({});
 const form = ref({ username: '', email: '', password: '', inviteCode: '' });
 
-const rules = computed<FormRules>(() => {
-  const r: FormRules = {
-    username: {
-      required: true,
-      trigger: ['input', 'blur'],
-      validator: (_r, v: string) =>
-        /^[a-zA-Z0-9_-]{3,20}$/.test(v) ? true : new Error('3-20 位字母/数字/下划线/连字符'),
-    },
-    email: { required: true, type: 'email', message: '邮箱格式不正确', trigger: ['input', 'blur'] },
-    password: { required: true, validator: (_r, v: string) => (v.length >= 8 ? true : new Error('密码至少 8 位')), trigger: ['input', 'blur'] },
-  };
-  if (mode.value === 'invite') {
-    r.inviteCode = { required: true, message: '请输入邀请码', trigger: ['input', 'blur'] };
+const mode = computed(() => site.info?.registrationMode ?? 'invite');
+const logoLetter = computed(() => (site.info?.siteName || 'B').slice(0, 1).toUpperCase());
+
+let failTimer: number | undefined;
+let successTimer: number | undefined;
+
+function validate(): boolean {
+  errors.value = {};
+  let ok = true;
+  if (!/^[a-zA-Z0-9_-]{3,20}$/.test(form.value.username)) {
+    errors.value.username = '用户名需为 3-20 位字母/数字/下划线/连字符';
+    ok = false;
   }
-  return r;
-});
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.value.email)) {
+    errors.value.email = '请输入有效的邮箱';
+    ok = false;
+  }
+  if (form.value.password.length < 8) {
+    errors.value.password = '密码至少 8 位';
+    ok = false;
+  }
+  if (mode.value === 'invite' && !form.value.inviteCode.trim()) {
+    errors.value.inviteCode = '请输入邀请码';
+    ok = false;
+  }
+  return ok;
+}
 
 async function submit() {
-  try {
-    await formRef.value?.validate();
-  } catch {
-    return;
-  }
+  if (!validate()) return;
   loading.value = true;
+  errorMessage.value = '';
+  loginFailed.value = false;
   try {
     await authApi.register({
-      username: form.value.username,
-      email: form.value.email,
+      username: form.value.username.trim(),
+      email: form.value.email.trim(),
       password: form.value.password,
-      inviteCode: form.value.inviteCode || undefined,
+      inviteCode: form.value.inviteCode.trim() || undefined,
     });
-    // 注册成功后自动登录
-    await auth.login(form.value.username, form.value.password);
-    message.success('注册成功，欢迎！');
-    router.push('/');
+    await auth.login(form.value.username.trim(), form.value.password);
+    loginSuccess.value = true;
+    message.success('注册成功，欢迎加入！');
+    if (successTimer) clearTimeout(successTimer);
+    successTimer = window.setTimeout(() => {
+      loginSuccess.value = false;
+      router.push('/');
+    }, 900);
   } catch (e) {
     const data = (e as { response?: { data?: { error?: { message?: string } } } }).response?.data;
-    message.error(data?.error?.message ?? '注册失败');
+    errorMessage.value = data?.error?.message ?? '注册失败，请重试';
+    loginFailed.value = true;
+    if (failTimer) clearTimeout(failTimer);
+    failTimer = window.setTimeout(() => (loginFailed.value = false), 3000);
   } finally {
     loading.value = false;
   }
