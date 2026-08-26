@@ -2,13 +2,14 @@
 .article-body {
   font-size: 16px;
   line-height: 1.9;
-  color: var(--n-text-color, #333);
+  color: var(--qj-text, #1e293b);
   word-break: break-word;
 }
 .article-body h1, .article-body h2, .article-body h3, .article-body h4, .article-body h5, .article-body h6 {
   margin: 1.6em 0 0.8em;
   line-height: 1.4;
   font-weight: 600;
+  color: var(--qj-text, #1e293b);
   scroll-margin-top: 80px;
 }
 .article-body h1 { font-size: 1.7em; padding-bottom: 0.4em; border-bottom: 1px solid rgba(128,128,128,0.25); }
@@ -16,7 +17,7 @@
 .article-body h3 { font-size: 1.25em; }
 .article-body h4 { font-size: 1.1em; }
 .article-body p { margin: 0.9em 0; }
-.article-body a { color: #18a058; text-decoration: none; }
+.article-body a { color: var(--qj-accent, #6366f1); text-decoration: none; }
 .article-body a:hover { text-decoration: underline; }
 .article-body img { max-width: 100%; height: auto; border-radius: 6px; margin: 0.5em 0; display: block; }
 .article-body blockquote {

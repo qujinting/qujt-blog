@@ -1,0 +1,91 @@
+/* ============ 设计系统 ============ */
+:root {
+  --qj-accent: #6366f1;
+  --qj-accent-2: #4f46e5;
+  --qj-bg: #ffffff;
+  --qj-bg-soft: #f8fafc;
+  --qj-card: #ffffff;
+  --qj-border: #eef2f7;
+  --qj-border-2: #e2e8f0;
+  --qj-text: #1e293b;
+  --qj-text-2: #64748b;
+  --qj-text-3: #94a3b8;
+  --qj-radius: 12px;
+  --qj-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 16px rgba(15, 23, 42, 0.05);
+  --qj-shadow-hover: 0 6px 24px rgba(79, 70, 229, 0.12), 0 2px 6px rgba(15, 23, 42, 0.06);
+}
+.dark {
+  --qj-bg: #0b1220;
+  --qj-bg-soft: #131c2e;
+  --qj-card: #101a2c;
+  --qj-border: #1e293b;
+  --qj-border-2: #334155;
+  --qj-text: #e2e8f0;
+  --qj-text-2: #94a3b8;
+  --qj-text-3: #64748b;
+  --qj-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 16px rgba(0, 0, 0, 0.3);
+  --qj-shadow-hover: 0 8px 28px rgba(129, 140, 248, 0.18);
+}
+
+.app-shell {
+  min-height: 100vh;
+  background: var(--qj-bg);
+  color: var(--qj-text);
+  transition: background 0.3s ease, color 0.3s ease;
+}
+
+/* 顶部导航 */
+.qj-header { position: sticky; top: 0; z-index: 20; background: color-mix(in srgb, var(--qj-bg) 82%, transparent); backdrop-filter: blur(12px); border-bottom: 1px solid var(--qj-border); }
+.qj-header-inner { max-width: 1100px; margin: 0 auto; height: 60px; display: flex; align-items: center; gap: 22px; padding: 0 20px; }
+.qj-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--qj-text); font-weight: 800; font-size: 19px; white-space: nowrap; }
+.qj-logo-mark { width: 30px; height: 30px; border-radius: 9px; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 800; box-shadow: 0 2px 8px rgba(99, 102, 241, 0.35); }
+.qj-nav-link { color: var(--qj-text-2); font-size: 14px; font-weight: 500; cursor: pointer; transition: color 0.15s; text-decoration: none; }
+.qj-nav-link:hover { color: var(--qj-accent); }
+
+/* 首页 Hero */
+.qj-hero { position: relative; border-radius: var(--qj-radius); overflow: hidden; margin-bottom: 30px; border: 1px solid var(--qj-border); box-shadow: var(--qj-shadow); cursor: pointer; transition: box-shadow 0.18s; }
+.qj-hero:hover { box-shadow: var(--qj-shadow-hover); }
+.qj-hero-bg { height: 300px; background-size: cover; background-position: center; background: linear-gradient(135deg, #6366f1, #8b5cf6 55%, #ec4899); }
+.qj-hero-overlay { background: linear-gradient(180deg, rgba(15, 23, 42, 0.15) 0%, rgba(15, 23, 42, 0.82) 100%); padding: 32px 34px 30px; }
+.qj-hero-overlay .hero-meta { display: flex; gap: 14px; align-items: center; font-size: 12px; color: rgba(255, 255, 255, 0.72); margin-bottom: 10px; flex-wrap: wrap; }
+.qj-hero-title { color: #fff; font-size: 27px; font-weight: 800; margin: 0 0 10px; }
+.qj-hero-summary { color: rgba(255, 255, 255, 0.85); font-size: 14px; line-height: 1.75; margin: 0; max-width: 720px; }
+
+/* 工具栏 */
+.qj-toolbar { display: flex; gap: 12px; align-items: center; margin-bottom: 22px; flex-wrap: wrap; }
+.qj-toolbar .n-select { min-width: 150px; }
+
+/* 卡片网格 */
+.qj-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
+@media (max-width: 720px) { .qj-grid { grid-template-columns: 1fr; } }
+.qj-card { background: var(--qj-card); border: 1px solid var(--qj-border); border-radius: var(--qj-radius); overflow: hidden; cursor: pointer; transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease; }
+.qj-card:hover { transform: translateY(-4px); box-shadow: var(--qj-shadow-hover); border-color: color-mix(in srgb, var(--qj-accent) 30%, var(--qj-border)); }
+.qj-card-cover { height: 170px; background-size: cover; background-position: center; background: linear-gradient(135deg, #6366f1, #8b5cf6 55%, #ec4899); }
+.qj-card-body { padding: 16px 18px 18px; }
+.qj-card-title { font-size: 16px; font-weight: 700; color: var(--qj-text); line-height: 1.5; margin: 0 0 8px; }
+.qj-card:hover .qj-card-title { color: var(--qj-accent); }
+.qj-card-summary { color: var(--qj-text-2); font-size: 13px; line-height: 1.7; margin: 0 0 12px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.qj-card-meta { display: flex; gap: 10px; align-items: center; font-size: 12px; color: var(--qj-text-3); flex-wrap: wrap; }
+.qj-chip { display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 999px; font-size: 12px; color: var(--qj-accent); background: color-mix(in srgb, var(--qj-accent) 10%, transparent); font-weight: 500; }
+.qj-tag { display: inline-flex; padding: 2px 8px; border-radius: 6px; font-size: 12px; color: var(--qj-text-2); background: var(--qj-bg-soft); border: 1px solid var(--qj-border); }
+
+/* 文章详情 */
+.qj-article-header { margin: 4px 0 18px; }
+.qj-article-title { font-size: 30px; font-weight: 800; color: var(--qj-text); line-height: 1.35; margin: 0 0 12px; }
+.qj-article-meta { display: flex; gap: 14px; align-items: center; font-size: 13px; color: var(--qj-text-2); flex-wrap: wrap; }
+.qj-cover { border-radius: var(--qj-radius); margin: 18px 0 26px; max-width: 100%; border: 1px solid var(--qj-border); }
+.qj-toc { position: sticky; top: 80px; max-height: calc(100vh - 120px); overflow: auto; border: 1px solid var(--qj-border); border-radius: 12px; padding: 14px 16px; background: var(--qj-bg-soft); }
+.qj-toc-title { font-weight: 700; font-size: 13px; margin-bottom: 8px; color: var(--qj-text); }
+.qj-toc-item { cursor: pointer; font-size: 13px; line-height: 2; color: var(--qj-text-2); border-left: 2px solid transparent; padding-left: 10px; margin-left: -16px; transition: all 0.15s; }
+.qj-toc-item:hover { color: var(--qj-accent); border-left-color: var(--qj-accent); }
+
+/* 评论区 */
+.qj-comments { border-top: 1px solid var(--qj-border); margin-top: 40px; padding-top: 24px; }
+
+/* 空态 */
+.qj-empty { padding: 80px 0; text-align: center; color: var(--qj-text-3); }
+.qj-empty .big { font-size: 46px; margin-bottom: 12px; }
+
+/* 页脚 */
+.qj-footer { border-top: 1px solid var(--qj-border); margin-top: 50px; background: var(--qj-bg-soft); }
+.qj-footer-inner { max-width: 1100px; margin: 0 auto; padding: 34px 20px; text-align: center; color: var(--qj-text-3); font-size: 13px; line-height: 1.9; }

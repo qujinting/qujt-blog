@@ -5,6 +5,7 @@ import App from './App.vue';
 import { router } from './router/index.js';
 import { useAuthStore } from './stores/auth.js';
 import './styles/article.css';
+import './styles/global.css';
 import 'highlight.js/styles/github.css';
 import 'katex/dist/katex.min.css';
 

@@ -1,27 +1,48 @@
 <template>
-  <div style="max-width:1100px; margin:0 auto; padding:20px 16px;">
-    <n-space style="margin-bottom:16px;" align="center">
-      <n-select v-model:value="filterCategory" :options="categoryOptions" clearable placeholder="全部分类" style="width:160px;" @update:value="applyFilters" />
-      <n-input v-model:value="filterQ" placeholder="搜索文章标题/内容" clearable style="width:220px;" @keyup.enter="applyFilters" />
-      <n-tag v-if="activeTagName" closable size="small" type="info" @close="clearTag">标签：{{ activeTagName }}</n-tag>
-      <span v-if="total > 0" style="color:var(--n-text-color-3); font-size:13px;">共 {{ total }} 篇</span>
-    </n-space>
-
-    <div v-if="loading">
-      <n-skeleton v-for="i in 4" :key="i" height="100px" style="margin-bottom:14px;" />
+  <div style="max-width:1100px; margin:0 auto; padding:24px 20px;">
+    <!-- 精选 Hero（最新公开文章，非筛选态才显示） -->
+    <div v-if="featured && !isFiltered" class="qj-hero" @click="router.push('/post/' + featured.slug)">
+      <div class="qj-hero-bg" :style="featured.coverImage ? { backgroundImage: 'url(' + featured.coverImage + ')' } : {}"></div>
+      <div class="qj-hero-overlay">
+        <div class="hero-meta">
+          <span style="background:rgba(255,255,255,0.92); color:#4f46e5; padding:1px 10px; border-radius:999px; font-weight:600;">精选</span>
+          <span v-if="featured.category">{{ featured.category.name }}</span>
+          <span>{{ dayjs(featured.publishAt ?? featured.createdAt).format('YYYY-MM-DD') }}</span>
+          <span>{{ featured.viewCount }} 阅读</span>
+        </div>
+        <h1 class="qj-hero-title">{{ featured.title }}</h1>
+        <p class="qj-hero-summary">{{ featured.summary }}</p>
+      </div>
     </div>
-    <template v-else>
-      <PostCard v-for="p in items" :key="p.id" :post="p" />
-      <n-empty v-if="items.length === 0" description="暂无文章" style="margin-top:60px;" />
-    </template>
 
-    <n-pagination v-if="total > pageSize" v-model:page="page" :item-count="total" :page-size="pageSize" style="justify-content:center; margin-top:24px;" @update:page="onPage" />
+    <!-- 筛选工具栏 -->
+    <div class="qj-toolbar">
+      <n-select v-model:value="filterCategory" :options="categoryOptions" clearable placeholder="全部分类" @update:value="applyFilters" />
+      <n-input v-model:value="filterQ" placeholder="搜索文章标题/内容" clearable style="width:230px;" @keyup.enter="applyFilters" :round="true" />
+      <n-tag v-if="activeTagName" closable size="small" type="info" @close="clearTag">标签：{{ activeTagName }}</n-tag>
+      <span v-if="total > 0" style="color:var(--qj-text-3); font-size:13px; margin-left:auto;">共 {{ total }} 篇</span>
+    </div>
+
+    <!-- 文章网格 -->
+    <div v-if="loading">
+      <n-skeleton v-for="i in 2" :key="i" height="180px" style="margin-bottom:16px;" />
+    </div>
+    <div v-else-if="gridItems.length" class="qj-grid">
+      <PostCard v-for="p in gridItems" :key="p.id" :post="p" />
+    </div>
+    <div v-else-if="!featured" class="qj-empty">
+      <div class="big">🌱</div>
+      <div>暂无文章，去后台写第一篇吧</div>
+    </div>
+
+    <n-pagination v-if="total > pageSize" v-model:page="page" :item-count="total" :page-size="pageSize" style="justify-content:center; margin-top:28px;" @update:page="onPage" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import dayjs from 'dayjs';
 import type { PostSummaryDTO } from '@qujt/shared';
 import { postsApi, taxonomyApi } from '../api/index.js';
 import { useSiteStore } from '../stores/site.js';
@@ -44,13 +65,16 @@ const categoryOptions = computed(() =>
   (site.info?.categories ?? []).map((c) => ({ label: c.name, value: String(c.id) })),
 );
 const activeTagName = computed(() => (activeTag.value ? tagNames.value[activeTag.value] ?? activeTag.value : ''));
+const isFiltered = computed(() => !!filterCategory.value || !!activeTag.value || !!filterQ.value.trim());
+const featured = computed(() => (items.value.length ? items.value[0] : null));
+const gridItems = computed(() => (featured.value && !isFiltered.value ? items.value.slice(1) : items.value));
 
 async function load() {
   loading.value = true;
   try {
     const res = await postsApi.list({
       page: page.value,
-      pageSize,
+      pageSize: pageSize + 1, // 多取一条用于判断是否还有下一页 + 精选
       category: filterCategory.value ?? undefined,
       tag: activeTag.value ?? undefined,
       q: filterQ.value || undefined,
