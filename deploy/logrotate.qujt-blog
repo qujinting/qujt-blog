@@ -1,0 +1,13 @@
+/var/log/qujt-api*.log /var/log/qujt-backup.log {
+    daily
+    maxsize 20M
+    rotate 14
+    missingok
+    notifempty
+    compress
+    delaycompress
+    copytruncate
+    dateext
+    dateformat -%Y%m%d
+    su root root
+}

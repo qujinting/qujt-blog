@@ -1,0 +1,75 @@
+name: Deploy production
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: '22.14.0'
+  PNPM_VERSION: '11.7.0'
+
+jobs:
+  build-test-deploy:
+    runs-on: ubuntu-24.04
+    environment: production
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Test
+        run: pnpm test
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Build release
+        run: |
+          pnpm build:server
+          pnpm build:web
+          pnpm build:admin
+          pnpm --filter @qujt/server deploy --prod --legacy "$RUNNER_TEMP/server-runtime"
+          SERVER_RUNTIME_DIR="$RUNNER_TEMP/server-runtime" node deploy/package-release.mjs "$GITHUB_SHA" "$RUNNER_TEMP/qujt-release.tar.gz"
+
+      - name: Configure SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          install -m 600 deploy/known_hosts ~/.ssh/known_hosts
+
+      - name: Upload immutable release
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+        run: |
+          scp -i ~/.ssh/deploy_key "$RUNNER_TEMP/qujt-release.tar.gz" "$DEPLOY_USER@$DEPLOY_HOST:/tmp/qujt-release-$GITHUB_SHA.tar.gz"
+
+      - name: Activate release
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+        run: |
+          ssh -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" \
+            "rm -rf '/tmp/qujt-activate-$GITHUB_SHA' && mkdir -p '/tmp/qujt-activate-$GITHUB_SHA' && tar -xzf '/tmp/qujt-release-$GITHUB_SHA.tar.gz' -C '/tmp/qujt-activate-$GITHUB_SHA' ./deploy/activate-release.sh && bash '/tmp/qujt-activate-$GITHUB_SHA/deploy/activate-release.sh' '$GITHUB_SHA' '/tmp/qujt-release-$GITHUB_SHA.tar.gz'"

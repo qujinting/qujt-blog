@@ -61,7 +61,7 @@ run('pnpm', ['exec', 'vite', 'build', '--base', testAdminBase, '--outDir', admin
 console.log('==> 2/4 打包');
 const bundle = path.join(os.tmpdir(), 'qujt-test-release');
 rmSync(bundle, { recursive: true, force: true });
-mkdirSync(path.join(bundle, 'apps', 'server', 'data'), { recursive: true });
+mkdirSync(path.join(bundle, 'apps', 'server'), { recursive: true });
 cpSync(path.join(ROOT, 'apps', 'server', 'dist'), path.join(bundle, 'apps', 'server', 'dist'), { recursive: true });
 cpSync(path.join(ROOT, 'apps', 'server', 'package.json'), path.join(bundle, 'apps', 'server', 'package.json'));
 cpSync(path.join(ROOT, 'deploy', 'backup.mjs'), path.join(bundle, 'apps', 'server', 'backup.mjs'));
@@ -69,10 +69,14 @@ cpSync(webDist, path.join(bundle, 'apps', 'test-web', 'dist'), { recursive: true
 cpSync(adminDist, path.join(bundle, 'apps', 'test-admin', 'dist'), { recursive: true });
 cpSync(path.join(ROOT, 'deploy', 'nginx.conf'), path.join(bundle, 'deploy', 'nginx.conf'));
 cpSync(path.join(ROOT, 'deploy', 'ecosystem.test.config.js'), path.join(bundle, 'deploy', 'ecosystem.test.config.js'));
+cpSync(path.join(ROOT, 'deploy', 'logrotate.qujt-blog'), path.join(bundle, 'deploy', 'logrotate.qujt-blog'));
+cpSync(path.join(ROOT, 'deploy', 'journald-qujt-blog.conf'), path.join(bundle, 'deploy', 'journald-qujt-blog.conf'));
 cpSync(path.join(ROOT, 'package.json'), path.join(bundle, 'package.json'));
 cpSync(path.join(ROOT, 'pnpm-workspace.yaml'), path.join(bundle, 'pnpm-workspace.yaml'));
 cpSync(path.join(ROOT, 'pnpm-lock.yaml'), path.join(bundle, 'pnpm-lock.yaml'));
-cpSync(path.join(ROOT, 'packages'), path.join(bundle, 'packages'), { recursive: true });
+mkdirSync(path.join(bundle, 'packages', 'shared'), { recursive: true });
+cpSync(path.join(ROOT, 'packages', 'shared', 'package.json'), path.join(bundle, 'packages', 'shared', 'package.json'));
+cpSync(path.join(ROOT, 'packages', 'shared', 'src'), path.join(bundle, 'packages', 'shared', 'src'), { recursive: true });
 const tarball = path.join(os.tmpdir(), 'qujt-test-release.tar.gz');
 rmSync(tarball, { force: true });
 run('tar', ['-czf', tarball, '-C', bundle, '.']);
@@ -84,13 +88,17 @@ console.log('==> 4/4 服务器部署测试环境');
 const script = `set -e
 mkdir -p /opt/qujt-blog && tar -xzf /tmp/qujt-test-release.tar.gz -C /opt/qujt-blog
 cd /opt/qujt-blog
-if [ ! -d node_modules ]; then pnpm install --prod --filter @qujt/server --registry="${registry}"; fi
-mkdir -p apps/server/data
+pnpm install --prod --frozen-lockfile --filter @qujt/server... --registry="${registry}"
+if [ -L current ]; then rm -rf apps/server/data && ln -s /opt/qujt-blog/shared/data apps/server/data; else mkdir -p apps/server/data; fi
 export TEST_JWT_SECRET='${testJwtSecret}'
 export TEST_ADMIN_USERNAME='${testAdminUser}'
 export TEST_ADMIN_PASSWORD='${testAdminPassword}'
 pm2 startOrRestart deploy/ecosystem.test.config.js
 pm2 save
+install -m 0644 deploy/logrotate.qujt-blog /etc/logrotate.d/qujt-blog
+install -d -m 0755 /etc/systemd/journald.conf.d
+install -m 0644 deploy/journald-qujt-blog.conf /etc/systemd/journald.conf.d/qujt-blog.conf
+systemctl restart systemd-journald
 cp deploy/nginx.conf /etc/nginx/sites-available/qujt-blog
 nginx -t && systemctl reload nginx
 echo TEST_DEPLOY_DONE`;

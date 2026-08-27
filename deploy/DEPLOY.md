@@ -1,141 +1,116 @@
-# 部署指南（P5）
+# 生产部署
 
-目标：Ubuntu 24.04 / 2C2G 服务器，HTTP(80) + PM2 + Nginx，公网 IP 直连（域名备案后可按注释切换）。
+当前生产采用：GitHub Actions 构建与测试、SSH 上传不可变产物、ECS 版本目录原子切换、PM2 运行 API、Nginx 托管前端。
 
-## 首次部署
+## 目录结构
 
-1. **SSH 密钥**：本机已生成 `~/.ssh/qujt-deploy-key`（私钥勿外传），公钥已加入服务器 `~/.ssh/authorized_keys`。
-2. **服务器安全组**：阿里云控制台放行 **80** 端口（22 已放行）。
-3. 执行一键部署（会先构建三端产物）：
-
-   ```bash
-   # 在项目根目录（本地）
-   ADMIN_PASSWORD=你的初始管理员密码 node deploy/deploy.mjs 115.29.149.137
-   ```
-
-   脚本自动：构建 → 打包 → 上传 `/opt/qujt-blog` → `pnpm install --prod` → 生成 `.env`（JWT_SECRET 随机）→ PM2 启动/重启 → Nginx reload。
-
-4. **服务器首次环境初始化**（deploy.mjs 不包含，仅首次手动执行一次）：
-
-   ```bash
-   ssh -i ~/.ssh/qujt-deploy-key root@115.29.149.137
-   bash /opt/qujt-blog/deploy/remote-setup.sh   # Node22/pnpm/pm2/nginx/swap/ufw(80,22)
-   ```
-
-5. **PM2 开机自启**（remote-setup 后执行一次）：
-
-   ```bash
-   pm2 startup systemd -u root --hp /root
-   pm2 save
-   ```
-
-6. **每日备份 cron**（remote-setup 后执行一次）：
-
-   ```bash
-   (crontab -l 2>/dev/null; echo '0 3 * * * /usr/local/bin/node /opt/qujt-blog/apps/server/backup.mjs >> /var/log/qujt-backup.log 2>&1') | crontab -
-   ```
-
-## 日常更新（重新部署）
-
-```bash
-node deploy/deploy.mjs            # 或 ADMIN_PASSWORD=xxx node deploy/deploy.mjs
+```text
+/opt/qujt-blog/
+  current -> releases/<git-sha>
+  releases/                 # 最多保留最近 5 个版本
+  shared/
+    server.env              # 生产环境变量，权限 600
+    data/                   # SQLite 生产/测试数据库
+    backups/                # SQLite 备份，保留 14 天
+  DEPLOYED_RELEASE
 ```
-（不会覆盖服务器 `apps/server/.env` 与数据库）
 
-## 常用运维
+每个 release 都包含构建产物、锁文件、生产依赖和部署脚本。发布不会覆盖 `shared` 中的环境变量、数据库和备份。
 
-| 操作 | 命令 |
+## GitHub Actions 自动发布
+
+推送到 `main` 后，`.github/workflows/deploy-production.yml` 会依次执行：
+
+1. `pnpm install --frozen-lockfile`
+2. 服务端测试和整个 workspace 类型检查
+3. 构建 server、web、admin
+4. 生成带 Git SHA 和构建时间的 `release.tar.gz`
+5. SCP 上传到 ECS
+6. 在 GitHub Ubuntu Runner 中按锁文件生成并打包 Linux 生产依赖（ECS 发布时不联网安装）
+7. 原子切换 `current`，重启 PM2 并 reload Nginx
+8. 验证 `/api/health`、`/`、`/admin/`
+9. 验证失败时自动切回上一个 release
+
+在 GitHub 仓库的 `production` Environment 中配置以下 Secrets：
+
+| Secret | 内容 |
 |---|---|
-| 查看日志 | `pm2 logs qujt-api` / `journalctl -u pm2-root` |
-| 重启 API | `pm2 restart qujt-api` |
-| 备份目录 | `/opt/qujt-blog/backups/`（保留 14 天） |
-| 数据库 | `/opt/qujt-blog/apps/server/data/qujt.db` |
-| Nginx | `/etc/nginx/sites-available/qujt-blog`（配置源在仓库 `deploy/nginx.conf`） |
+| `DEPLOY_HOST` | ECS 公网 IP，例如 `115.29.149.137` |
+| `DEPLOY_USER` | `root` |
+| `DEPLOY_SSH_KEY` | `~/.ssh/qujt-deploy-key` 私钥全文 |
 
-## 备案完成后切换域名（可选）
+ECS 主机公钥固定在 `deploy/known_hosts`；服务器重装或 SSH host key 变化时，必须先人工核验新指纹再更新该文件。
 
-1. DNS 解析 A 记录到 `115.29.149.137`
-2. `deploy/nginx.conf`：`server_name` 改为域名；OSS 防盗链 Referer 白名单加域名
-3. （可选）申请证书后改为 HTTPS：加 443 server 块 + certbot；代码无需改动
+建议给 `production` Environment 配置审批保护规则。工作流使用 concurrency，生产发布不会并发执行。
 
-## 注意
+## 首次迁移现有服务器
 
-- 2C2G 服务器**不执行构建**，产物一律本地构建后上传。
-- `.env` 只在首次生成；若需修改（如换 OSS Key），直接编辑服务器 `/opt/qujt-blog/apps/server/.env` 后 `pm2 restart qujt-api`。
-
----
-
-# 测试环境（P1，与生产共用同一台服务器）
-
-测试环境与生产**共用同一台服务器**，但业务上完全隔离：
-
-- 独立 API 进程 `qujt-api-test`（端口 3001）+ 独立测试库 `apps/server/data/test.db`
-- 前台 `http://IP/test/`、后台 `http://IP/test/admin/`（写入 `apps/test-web`、`apps/test-admin`，不覆盖生产前端）
-- 测试前端通过 `/test/api/*` 反代到本机 3001；会话 Cookie 限定在 `/test` 路径，与生产会话互不干扰
-
-> 注意：测试环境复用生产服务器上的 OSS 配置（媒体会上传到同一 OSS Bucket）。如需隔离媒体，请在 `deploy/ecosystem.test.config.js` 的测试进程里单独配置 `OSS_*`（`OSS_BUCKET` 等）。
-
-## 部署测试环境
-
-项目根目录（本地）执行：
+首次只执行一次：
 
 ```bash
-node deploy/deploy-test.mjs            # 或 node deploy/deploy-test.mjs 115.29.149.137
-```
-
-脚本自动：构建 server + 测试前台(base=`/test/`) + 测试后台(base=`/test/admin/`) → 上传到服务器 → 启动/重启 `qujt-api-test` → 写入 Nginx 的 `/test` 路由并 reload。
-
-## 首次访问
-
-- 前台：`http://115.29.149.137/test`
-- 后台：`http://115.29.149.137/test/admin`
-- 测试管理员：默认 `admin`，初始密码在部署完成时打印（下次部署可用 `TEST_ADMIN_PASSWORD=xxx node deploy/deploy-test.mjs` 覆盖）
-
-## 重新部署 / 更新
-
-```bash
-node deploy/deploy-test.mjs            # 幂等：会自动 restart qujt-api-test 并同步 Nginx
-```
-
-## 常用运维
-
-| 操作 | 命令 |
-|---|---|
-| 查看测试 API 日志 | `pm2 logs qujt-api-test` |
-| 重启测试 API | `pm2 restart qujt-api-test` |
-| 测试库 | `/opt/qujt-blog/apps/server/data/test.db` |
-
-## 移除测试环境
-
-```bash
+scp -i ~/.ssh/qujt-deploy-key deploy/*.sh deploy/*.js deploy/*.conf deploy/logrotate.qujt-blog root@115.29.149.137:/tmp/qujt-deploy/
 ssh -i ~/.ssh/qujt-deploy-key root@115.29.149.137
-pm2 delete qujt-api-test && pm2 save
-# 删除 Nginx 配置中的 /test 相关 location 后 reload nginx
+bash /tmp/qujt-deploy/migrate-legacy.sh
 ```
 
-> 生产环境不受影响：`deploy.mjs` 只管理 `qujt-api`，`deploy-test.mjs` 只管理 `qujt-api-test` 与 `/test` 路由；测试前端写入 `apps/test-web`、`apps/test-admin`，不会覆盖生产 `apps/web/dist`、`apps/admin/dist`。
+迁移脚本会短暂停止生产和测试 API，复制现有 `.env`、SQLite 数据、备份到 `shared`，建立初始 legacy release，切换 Nginx/PM2 后执行健康检查。源目录暂时保留，确认稳定后再人工清理。
 
----
+## 手动应急发布
 
-## 本地开发：切换后端 / 数据库
-
-前端 `web` / `admin` 的 dev 代理和 API 基址按 **Vite mode** 切换（`vite.config.ts`）：
-
-| 命令 | 说明 | `/api` 流向 |
-|---|---|---|
-| `pnpm dev` | 本地沙箱（默认） | 本地后台 `127.0.0.1:3000`（本地 SQLite） |
-| `pnpm dev:test` | 本地前端连线上测试 API | `/test/api` → `http://115.29.149.137`（测试库 `data/test.db`） |
-
-> `dev:test` 时前端走 `/test/api`（不是 `/api`），因为测试 API 的登录 Cookie 限定在 `/test` 路径（`COOKIE_PATH=/test`），路径必须匹配才能带上会话；代理目标可通过 `VITE_TEST_HOST` 覆盖（默认 `115.29.149.137`）。
-
-### 本地沙箱用真实测试数据（可选）
-
-从测试服拉取一份一致性快照到本地沙箱库（旧库自动备份为 `.bak`）：
+正常发布应通过 GitHub Actions。需要从 Linux 本机或 WSL 应急发布时（Windows 原生环境不能生成兼容 ECS 的原生依赖，请使用 GitHub Actions）：
 
 ```bash
-node deploy/fetch-test-db.mjs
+node deploy/deploy.mjs 115.29.149.137
 ```
 
-会覆盖本地 `.env` 中 `DATABASE_PATH` 指向的库（默认 `apps/server/data/qujt.db`）；拉取前请先停止本地后台，拉完后 `pnpm dev` 重启即可用测试数据调试。
+手动入口执行与 CI 相同的测试、类型检查、构建、打包和原子激活流程。默认拒绝脏工作区，避免发布无法追溯的代码。只有明确的紧急情况才能使用 `ALLOW_DIRTY_DEPLOY=1`。
 
-> 说明：项目后台是内嵌 SQLite（`better-sqlite3`），无法跨机器直接连远程库，所以“本地后台 + 线上测试库同步实时”不可行——`fetch-test-db.mjs` 是**一次性快照**，本地写入不会回传测试服；想要实时共享数据请直接用 `/test`、`/test/admin`。
+## 手动回滚
+
+回滚到最近一个非当前版本：
+
+```bash
+ssh -i ~/.ssh/qujt-deploy-key root@115.29.149.137 \
+  'bash /opt/qujt-blog/current/deploy/rollback-release.sh'
+```
+
+指定版本：
+
+```bash
+bash /opt/qujt-blog/current/deploy/rollback-release.sh <release-id>
+```
+
+数据库不随代码回滚。涉及数据库结构变更时，迁移必须保持向后兼容，否则代码回滚不能自动恢复旧 schema。
+
+## 测试环境
+
+测试环境仍与生产共用 ECS，但使用 `qujt-api-test`、端口 3001 和 `shared/data/test.db`。测试前端位于旧的隔离目录，不覆盖生产 `current`：
+
+```bash
+node deploy/deploy-test.mjs
+```
+
+- 前台：`http://115.29.149.137/test/`
+- 后台：`http://115.29.149.137/test/admin/`
+- API：`http://115.29.149.137/test/api/health`
+
+## 数据和日志
+
+- 生产数据库：`/opt/qujt-blog/shared/data/qujt.db`
+- 测试数据库：`/opt/qujt-blog/shared/data/test.db`
+- 备份：`/opt/qujt-blog/shared/backups/`，保留 14 天
+- 应用日志：`/var/log/qujt-api*.log` 和 `/var/log/qujt-backup.log`
+- 日志每日轮转，单文件达到 20MB 提前轮转，压缩并保留 14 份
+- systemd journal 上限 256MB，并至少保留 2GB 空闲磁盘
+
+## 首次服务器初始化
+
+全新 Ubuntu 24.04 服务器先上传 release，然后以 root 执行：
+
+```bash
+bash /opt/qujt-blog/current/deploy/remote-setup.sh
+pm2 startup systemd -u root --hp /root
+pm2 save
+```
+
+服务器只安装运行依赖，不执行 TypeScript 或 Vite 构建。Node 版本固定为 22.14.0，与 GitHub Actions 一致。

@@ -23,9 +23,14 @@ if [ ! -f /swapfile ]; then
   grep -q '/swapfile' /etc/fstab || echo '/swapfile none swap sw 0 0' >> /etc/fstab
 fi
 
+echo "==> 日志保留"
+install -m 0644 /opt/qujt-blog/current/deploy/logrotate.qujt-blog /etc/logrotate.d/qujt-blog
+install -d -m 0755 /etc/systemd/journald.conf.d
+install -m 0644 /opt/qujt-blog/current/deploy/journald-qujt-blog.conf /etc/systemd/journald.conf.d/qujt-blog.conf
+systemctl restart systemd-journald
+
 echo "==> Nginx 站点"
-mkdir -p /opt/qujt-blog/deploy
-cp /opt/qujt-blog/deploy/nginx.conf /etc/nginx/sites-available/qujt-blog
+cp /opt/qujt-blog/current/deploy/nginx.conf /etc/nginx/sites-available/qujt-blog
 ln -sf /etc/nginx/sites-available/qujt-blog /etc/nginx/sites-enabled/qujt-blog
 rm -f /etc/nginx/sites-enabled/default
 nginx -t && systemctl restart nginx
