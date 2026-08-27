@@ -47,7 +47,7 @@ CI 通过后，在本机 Windows 或 WSL 执行：
 node deploy/deploy.mjs 115.29.149.137
 ```
 
-本机入口执行测试、类型检查、三端构建、打包、SCP 上传和原子激活。它默认拒绝脏工作区，避免发布无法追溯的代码。只有明确的紧急情况才能使用 `ALLOW_DIRTY_DEPLOY=1`。
+本机入口执行类型检查、三端构建、打包、SCP 上传和原子激活；Linux/WSL 还会运行完整服务端测试。Windows 上服务端测试由 GitHub Actions 的 Linux CI 负责，避免本地 `better-sqlite3` 原生模块状态阻碍部署。入口默认拒绝脏工作区，避免发布无法追溯的代码。只有明确的紧急情况才能使用 `ALLOW_DIRTY_DEPLOY=1`。
 
 Windows 不能构建 Linux 原生模块，因此服务器保存一份已验证的共享 Linux runtime。日常前端、业务代码和未改变依赖锁文件的发布可直接从 Windows 执行；当 `pnpm-lock.yaml` 变化时，激活会拒绝继续，必须在 WSL/Linux 刷新共享 runtime，不能冒险上传 Windows 原生模块。
 

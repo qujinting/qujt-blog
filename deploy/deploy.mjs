@@ -26,7 +26,11 @@ const sha = output('git', ['rev-parse', 'HEAD']);
 const releaseId = dirty ? sha + '-dirty-' + Date.now() : sha;
 const archive = path.join(os.tmpdir(), 'qujt-release-' + releaseId + '.tar.gz');
 const commandOptions = { shell: process.platform === 'win32' };
-run('pnpm', ['test'], commandOptions);
+if (process.platform === 'win32') {
+  console.log('Skipping server tests on Windows; GitHub Actions runs the authoritative Linux test suite.');
+} else {
+  run('pnpm', ['test'], commandOptions);
+}
 run('pnpm', ['typecheck'], commandOptions);
 for (const script of ['build:server', 'build:web', 'build:admin']) run('pnpm', [script], commandOptions);
 run('node', ['deploy/package-release.mjs', releaseId, archive]);
