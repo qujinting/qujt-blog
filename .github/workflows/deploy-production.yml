@@ -20,7 +20,7 @@ jobs:
   build-test-deploy:
     runs-on: ubuntu-24.04
     environment: production
-    timeout-minutes: 30
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
 
@@ -64,12 +64,12 @@ jobs:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
         run: |
-          scp -i ~/.ssh/deploy_key "$RUNNER_TEMP/qujt-release.tar.gz" "$DEPLOY_USER@$DEPLOY_HOST:/tmp/qujt-release-$GITHUB_SHA.tar.gz"
+          scp -o ServerAliveInterval=30 -o ServerAliveCountMax=10 -i ~/.ssh/deploy_key "$RUNNER_TEMP/qujt-release.tar.gz" "$DEPLOY_USER@$DEPLOY_HOST:/tmp/qujt-release-$GITHUB_SHA.tar.gz"
 
       - name: Activate release
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
         run: |
-          ssh -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" \
+          ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=10 -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" \
             "rm -rf '/tmp/qujt-activate-$GITHUB_SHA' && mkdir -p '/tmp/qujt-activate-$GITHUB_SHA' && tar -xzf '/tmp/qujt-release-$GITHUB_SHA.tar.gz' -C '/tmp/qujt-activate-$GITHUB_SHA' ./deploy/activate-release.sh && bash '/tmp/qujt-activate-$GITHUB_SHA/deploy/activate-release.sh' '$GITHUB_SHA' '/tmp/qujt-release-$GITHUB_SHA.tar.gz'"
