@@ -17,10 +17,6 @@ function output(cmd, args) {
   if (result.status !== 0) process.exit(result.status ?? 1);
   return result.stdout.trim();
 }
-if (process.platform !== 'linux') {
-  console.error('Manual production releases must run on Linux so native runtime dependencies match ECS. Use GitHub Actions from Windows.');
-  process.exit(2);
-}
 const dirty = output('git', ['status', '--porcelain']);
 if (dirty && process.env.ALLOW_DIRTY_DEPLOY !== '1') {
   console.error('Refusing to deploy a dirty working tree. Commit changes first, or set ALLOW_DIRTY_DEPLOY=1 for an explicit emergency release.');
@@ -29,12 +25,11 @@ if (dirty && process.env.ALLOW_DIRTY_DEPLOY !== '1') {
 const sha = output('git', ['rev-parse', 'HEAD']);
 const releaseId = dirty ? sha + '-dirty-' + Date.now() : sha;
 const archive = path.join(os.tmpdir(), 'qujt-release-' + releaseId + '.tar.gz');
-run('pnpm', ['test'], { shell: process.platform === 'win32' });
-run('pnpm', ['typecheck'], { shell: process.platform === 'win32' });
-for (const script of ['build:server', 'build:web', 'build:admin']) run('pnpm', [script]);
-const runtime = path.join(os.tmpdir(), 'qujt-server-runtime-' + releaseId);
-run('pnpm', ['--filter', '@qujt/server', 'deploy', '--prod', '--legacy', runtime]);
-run('node', ['deploy/package-release.mjs', releaseId, archive], { env: { ...process.env, SERVER_RUNTIME_DIR: runtime } });
+const commandOptions = { shell: process.platform === 'win32' };
+run('pnpm', ['test'], commandOptions);
+run('pnpm', ['typecheck'], commandOptions);
+for (const script of ['build:server', 'build:web', 'build:admin']) run('pnpm', [script], commandOptions);
+run('node', ['deploy/package-release.mjs', releaseId, archive]);
 run('scp', ['-i', key, '-o', 'BatchMode=yes', '-o', 'StrictHostKeyChecking=accept-new', archive, user + '@' + host + ':/tmp/qujt-release-' + releaseId + '.tar.gz']);
 const remoteArchive = '/tmp/qujt-release-' + releaseId + '.tar.gz';
 const remoteActivate = '/tmp/qujt-activate-' + releaseId;

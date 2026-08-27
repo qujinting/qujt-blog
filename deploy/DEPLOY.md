@@ -1,6 +1,6 @@
 # 生产部署
 
-当前生产采用：GitHub Actions 构建与测试、SSH 上传不可变产物、ECS 版本目录原子切换、PM2 运行 API、Nginx 托管前端。
+当前生产采用：GitHub Actions 持续集成验证、本机构建与 SSH 上传不可变产物、ECS 版本目录原子切换、PM2 运行 API、Nginx 托管前端。
 
 ## 目录结构
 
@@ -17,31 +17,15 @@
 
 每个 release 都包含构建产物、锁文件、生产依赖和部署脚本。发布不会覆盖 `shared` 中的环境变量、数据库和备份。
 
-## GitHub Actions 自动发布
+## GitHub Actions 持续集成
 
-推送到 `main` 后，`.github/workflows/deploy-production.yml` 会依次执行：
+推送到 `main` 或创建 PR 后，`.github/workflows/deploy-production.yml` 会在 GitHub Hosted Runner 执行：
 
 1. `pnpm install --frozen-lockfile`
 2. 服务端测试和整个 workspace 类型检查
 3. 构建 server、web、admin
-4. 生成带 Git SHA 和构建时间的 `release.tar.gz`
-5. SCP 上传到 ECS
-6. 在 GitHub Ubuntu Runner 中按锁文件生成并打包 Linux 生产依赖（ECS 发布时不联网安装）
-7. 原子切换 `current`，重启 PM2 并 reload Nginx
-8. 验证 `/api/health`、`/`、`/admin/`
-9. 验证失败时自动切回上一个 release
 
-在 GitHub 仓库的 `production` Environment 中配置以下 Secrets：
-
-| Secret | 内容 |
-|---|---|
-| `DEPLOY_HOST` | ECS 公网 IP，例如 `115.29.149.137` |
-| `DEPLOY_USER` | `root` |
-| `DEPLOY_SSH_KEY` | `~/.ssh/qujt-deploy-key` 私钥全文 |
-
-ECS 主机公钥固定在 `deploy/known_hosts`；服务器重装或 SSH host key 变化时，必须先人工核验新指纹再更新该文件。
-
-建议给 `production` Environment 配置审批保护规则。工作流使用 concurrency，生产发布不会并发执行。
+CI 不保存服务器凭据、不上传制品、不触发生产切换。这样避免 GitHub Runner 到国内 ECS 的跨境上传瓶颈。
 
 ## 首次迁移现有服务器
 
@@ -55,15 +39,17 @@ bash /tmp/qujt-deploy/migrate-legacy.sh
 
 迁移脚本会短暂停止生产和测试 API，复制现有 `.env`、SQLite 数据、备份到 `shared`，建立初始 legacy release，切换 Nginx/PM2 后执行健康检查。源目录暂时保留，确认稳定后再人工清理。
 
-## 手动应急发布
+## 本机手动发布
 
-正常发布应通过 GitHub Actions。需要从 Linux 本机或 WSL 应急发布时（Windows 原生环境不能生成兼容 ECS 的原生依赖，请使用 GitHub Actions）：
+CI 通过后，在本机 Windows 或 WSL 执行：
 
 ```bash
 node deploy/deploy.mjs 115.29.149.137
 ```
 
-手动入口执行与 CI 相同的测试、类型检查、构建、打包和原子激活流程。默认拒绝脏工作区，避免发布无法追溯的代码。只有明确的紧急情况才能使用 `ALLOW_DIRTY_DEPLOY=1`。
+本机入口执行测试、类型检查、三端构建、打包、SCP 上传和原子激活。它默认拒绝脏工作区，避免发布无法追溯的代码。只有明确的紧急情况才能使用 `ALLOW_DIRTY_DEPLOY=1`。
+
+Windows 不能构建 Linux 原生模块，因此服务器保存一份已验证的共享 Linux runtime。日常前端、业务代码和未改变依赖锁文件的发布可直接从 Windows 执行；当 `pnpm-lock.yaml` 变化时，激活会拒绝继续，必须在 WSL/Linux 刷新共享 runtime，不能冒险上传 Windows 原生模块。
 
 ## 手动回滚
 

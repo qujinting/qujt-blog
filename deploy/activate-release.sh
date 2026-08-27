@@ -32,8 +32,15 @@ ln -s "$SHARED/server.env" "$INCOMING/apps/server/.env"
 ln -s "$SHARED/data" "$INCOMING/apps/server/data"
 ln -s "$SHARED/backups" "$INCOMING/backups"
 
+if [ ! -d "$INCOMING/apps/server/node_modules" ]; then
+  RUNTIME="$SHARED/runtime"
+  [ -d "$RUNTIME/node_modules" ] && [ -d "$RUNTIME/apps/server/node_modules" ] || { echo "missing shared Linux runtime; refresh it from WSL/Linux" >&2; exit 2; }
+  cmp -s "$INCOMING/pnpm-lock.yaml" "$RUNTIME/pnpm-lock.yaml" || { echo "dependency lockfile changed; refresh shared Linux runtime from WSL/Linux before deploying" >&2; exit 2; }
+  ln -s "$RUNTIME/node_modules" "$INCOMING/node_modules"
+  ln -s "$RUNTIME/apps/server/node_modules" "$INCOMING/apps/server/node_modules"
+fi
+
 cd "$INCOMING"
-[ -d apps/server/node_modules ] || { echo "release has no bundled Linux production dependencies" >&2; exit 2; }
 (cd apps/server && node -e "require('better-sqlite3');require('argon2');console.log('native dependencies ok')")
 
 mv "$INCOMING" "$TARGET"
