@@ -14,8 +14,18 @@
             <n-form-item label="摘要">
               <n-input v-model:value="form.summary" type="textarea" :rows="3" placeholder="留空则自动截取正文前 200 字" />
             </n-form-item>
-            <n-form-item label="封面图 URL">
-              <n-input v-model:value="form.coverImage" placeholder="https://…" />
+            <n-form-item label="封面图">
+              <n-upload
+                v-model:file-list="coverFileList"
+                list-type="image-card"
+                accept="image/*"
+                :max="1"
+                :disabled="coverUploading"
+                :custom-request="coverUploadRequest"
+                @remove="handleCoverRemove"
+              >
+                上传封面
+              </n-upload>
             </n-form-item>
             <n-form-item label="分类">
               <n-select v-model:value="form.categoryId" :options="categoryOptions" clearable placeholder="选择分类" />
@@ -67,7 +77,7 @@
 import { computed, onMounted, reactive, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useMessage } from 'naive-ui';
-import type { UploadCustomRequestOptions } from 'naive-ui';
+import type { UploadCustomRequestOptions, UploadFileInfo } from 'naive-ui';
 import { MdEditor, type ToolbarNames } from 'md-editor-v3';
 import 'md-editor-v3/lib/style.css';
 import type { CategoryDTO, TagDTO } from '@qujt/shared';
@@ -87,6 +97,8 @@ const tags = ref<TagDTO[]>([]);
 const importShow = ref(false);
 const importResult = ref<{ source: string; post: AdminPostDTO; unresolvedImages: string[] } | null>(null);
 const publishAtTs = ref<number | null>(null);
+const coverUploading = ref(false);
+const coverFileList = ref<UploadFileInfo[]>([]);
 
 const categoryOptions = computed(() => categories.value.map((c) => ({ label: c.name, value: c.id })));
 const tagOptions = computed(() => tags.value.map((t) => ({ label: t.name, value: t.name })));
@@ -133,6 +145,9 @@ async function loadPost() {
     form.slug = post.slug;
     form.summary = post.summary ?? '';
     form.coverImage = post.coverImage ?? '';
+    coverFileList.value = form.coverImage
+      ? [{ id: 'cover', name: '当前封面', status: 'finished', url: form.coverImage }]
+      : [];
     form.categoryId = post.category?.id ?? null;
     form.tagNames = post.tags.map((t) => t.name);
     form.visibility = post.visibility;
@@ -154,7 +169,7 @@ function buildPayload(forceStatus?: string) {
   };
   if (form.slug.trim()) payload.slug = form.slug.trim();
   if (form.summary.trim()) payload.summary = form.summary.trim();
-  if (form.coverImage.trim()) payload.coverImage = form.coverImage.trim();
+  payload.coverImage = form.coverImage.trim() || null;
   if (form.categoryId != null) payload.categoryId = form.categoryId;
   if (form.tagNames.length) payload.tagNames = form.tagNames;
   if (form.visibility === 'password') {
@@ -190,6 +205,38 @@ async function save(forceStatus: string) {
   }
 }
 
+const coverUploadRequest = async (opt: UploadCustomRequestOptions) => {
+  const file = opt.file.file as File | null;
+  if (!file) {
+    opt.onError();
+    return;
+  }
+  coverUploading.value = true;
+  try {
+    const res = await mediaApi.upload(file);
+    form.coverImage = res.media.url;
+    coverFileList.value = [{
+      id: 'cover',
+      name: file.name,
+      status: 'finished',
+      url: res.media.url,
+    }];
+    opt.onFinish();
+    message.success('封面上传成功');
+  } catch (e) {
+    opt.onError();
+    message.error((e as Error).message);
+  } finally {
+    coverUploading.value = false;
+  }
+};
+
+const handleCoverRemove = () => {
+  form.coverImage = '';
+  coverFileList.value = [];
+  return true;
+};
+
 const handleUploadImg = async (files: File[], callback: (urls: string[], texts: string[]) => void) => {
   const urls: string[] = [];
   const texts: string[] = [];
@@ -215,6 +262,9 @@ const importRequest = async (opt: UploadCustomRequestOptions) => {
     form.slug = res.post.slug;
     form.summary = res.post.summary ?? '';
     form.coverImage = res.post.coverImage ?? '';
+    coverFileList.value = form.coverImage
+      ? [{ id: 'cover', name: '导入的封面', status: 'finished', url: form.coverImage }]
+      : [];
     form.categoryId = res.post.category?.id ?? null;
     form.tagNames = res.post.tags.map((t) => t.name);
     form.visibility = res.post.visibility;
