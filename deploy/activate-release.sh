@@ -34,9 +34,8 @@ ln -s "$SHARED/backups" "$INCOMING/backups"
 
 if [ ! -d "$INCOMING/apps/server/node_modules" ]; then
   RUNTIME="$SHARED/runtime"
-  [ -d "$RUNTIME/node_modules" ] && [ -d "$RUNTIME/apps/server/node_modules" ] || { echo "missing shared Linux runtime; refresh it from WSL/Linux" >&2; exit 2; }
-  cmp -s "$INCOMING/pnpm-lock.yaml" "$RUNTIME/pnpm-lock.yaml" || { echo "dependency lockfile changed; refresh shared Linux runtime from WSL/Linux before deploying" >&2; exit 2; }
-  ln -s "$RUNTIME/node_modules" "$INCOMING/node_modules"
+  [ -d "$RUNTIME/apps/server/node_modules" ] || { echo "missing shared Linux runtime; run refresh-production-runtime.sh from WSL/Linux" >&2; exit 2; }
+  cmp -s "$INCOMING/pnpm-lock.yaml" "$RUNTIME/pnpm-lock.yaml" || { echo "dependency lockfile changed; run refresh-production-runtime.sh from WSL/Linux before deploying" >&2; exit 2; }
   ln -s "$RUNTIME/apps/server/node_modules" "$INCOMING/apps/server/node_modules"
 fi
 

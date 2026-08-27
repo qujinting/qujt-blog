@@ -51,6 +51,19 @@ node deploy/deploy.mjs 115.29.149.137
 
 Windows 不能构建 Linux 原生模块，因此服务器保存一份已验证的共享 Linux runtime。日常前端、业务代码和未改变依赖锁文件的发布可直接从 Windows 执行；当 `pnpm-lock.yaml` 变化时，激活会拒绝继续，必须在 WSL/Linux 刷新共享 runtime，不能冒险上传 Windows 原生模块。
 
+
+## 根目录快捷脚本
+
+在资源管理器右键选择“使用 PowerShell 运行”，或在项目根目录执行对应脚本：
+
+| 脚本 | 用途 |
+|---|---|
+| `publish-production.ps1` | 拉取最新 `main` 并发布生产。`-SkipPull` 可跳过拉取。 |
+| `production-status.ps1` | 查看线上 release、PM2、生产/测试健康检查和磁盘。 |
+| `rollback-production.ps1` | 交互确认后回滚到上一 release，或传入 `-ReleaseId <id>`。 |
+| `publish-test.ps1` | 构建并发布测试环境。 |
+| `refresh-production-runtime.sh` | 仅在依赖锁文件变化后，从 WSL/Linux 刷新共享 Linux runtime。 |
+
 ## 手动回滚
 
 回滚到最近一个非当前版本：
