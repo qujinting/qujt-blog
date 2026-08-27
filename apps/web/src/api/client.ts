@@ -1,6 +1,8 @@
 import axios from 'axios';
 
-export const api = axios.create({ baseURL: '/api', withCredentials: true });
+const API_BASE: string = import.meta.env.VITE_API_BASE || '/api';
+
+export const api = axios.create({ baseURL: API_BASE, withCredentials: true });
 
 // 401 时先尝试 refresh 一次，再重放原请求；refresh 失败派发会话失效事件
 api.interceptors.response.use(
@@ -12,7 +14,7 @@ api.interceptors.response.use(
     if (status === 401 && url && url !== '/auth/login' && url !== '/auth/refresh' && !config?._retried) {
       config._retried = true;
       try {
-        await axios.post('/api/auth/refresh', undefined, { withCredentials: true });
+        await axios.post(API_BASE + '/auth/refresh', undefined, { withCredentials: true });
         return api(config);
       } catch {
         window.dispatchEvent(new CustomEvent('qujt:unauthorized'));

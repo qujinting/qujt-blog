@@ -17,12 +17,12 @@ function insertRefreshToken(db: Database.Database, userId: number, hash: string,
 }
 
 export function accessCookieOptions(app: FastifyInstance) {
-  return { path: '/', httpOnly: true, sameSite: 'strict' as const, secure: false };
+  return { path: app.cfg.COOKIE_PATH, httpOnly: true, sameSite: 'strict' as const, secure: false };
 }
 
 export function refreshCookieOptions(app: FastifyInstance) {
   return {
-    path: '/',
+    path: app.cfg.COOKIE_PATH,
     httpOnly: true,
     sameSite: 'strict' as const,
     secure: false,
@@ -67,4 +67,11 @@ export function revokeRefreshByRaw(db: Database.Database, raw: string): void {
   db.prepare(`UPDATE refresh_tokens SET revoked_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE token_hash = ?`).run(
     sha256Hex(raw),
   );
+}
+
+/** 撤销某用户所有未失效的 refresh token（用于管理员重置密码后让其旧会话失效） */
+export function revokeRefreshByUser(db: Database.Database, userId: number): void {
+  db.prepare(
+    `UPDATE refresh_tokens SET revoked_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE user_id = ? AND revoked_at IS NULL`,
+  ).run(userId);
 }

@@ -92,7 +92,15 @@ onMounted(() => site.load());
 .csr-subtitle { font-size: 0.9rem; color: var(--qj-text-2); margin: 0; }
 .csr-field { margin-bottom: 1.1rem; }
 .csr-label { display: block; font-size: 0.85rem; font-weight: 600; color: var(--qj-text-2); margin-bottom: 6px; }
-.csr-error { font-size: 0.8rem; color: #ef4444; margin: 6px 0 0; }
+.csr-error {
+  font-size: 0.8rem;
+  color: #ef4444;
+  margin: 6px 0 0;
+  min-height: 1.4em;
+  line-height: 1.4;
+  transition: opacity 0.18s ease;
+}
+.csr-error.is-empty { opacity: 0; }
 .csr-alert {
   padding: 10px 14px; font-size: 0.85rem; color: #ef4444;
   background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25);

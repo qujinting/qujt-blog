@@ -71,6 +71,54 @@ describe('后台扩展接口', () => {
     expect(self.json().error.code).toBe('CANNOT_MODIFY_SELF');
   });
 
+  it('管理员重置用户密码：新密码可登录、旧密码失效；密码过短 → 400', async () => {
+    app = await makeApp({ registrationMode: 'open' });
+    const cookies = await adminSession(app);
+    const reg = await app.inject({
+      method: 'POST',
+      url: '/api/auth/register',
+      payload: { username: 'carol', email: 'carol@test.local', password: 'oldpass-123' },
+    });
+    expect(reg.statusCode).toBe(201);
+    const uid = reg.json().user.id;
+
+    // 密码过短 → 400
+    const short = await app.inject({
+      method: 'POST',
+      url: `/api/admin/users/${uid}/password`,
+      headers: adminHeaders(cookies),
+      payload: { password: '123' },
+    });
+    expect(short.statusCode).toBe(400);
+
+    // 正常重置
+    const reset = await app.inject({
+      method: 'POST',
+      url: `/api/admin/users/${uid}/password`,
+      headers: adminHeaders(cookies),
+      payload: { password: 'newpass-456' },
+    });
+    expect(reset.statusCode).toBe(200);
+    expect(reset.json().ok).toBe(true);
+
+    // 旧密码登录失败
+    const oldLogin = await app.inject({
+      method: 'POST',
+      url: '/api/auth/login',
+      payload: { account: 'carol', password: 'oldpass-123' },
+    });
+    expect(oldLogin.statusCode).toBe(401);
+
+    // 新密码登录成功
+    const newLogin = await app.inject({
+      method: 'POST',
+      url: '/api/auth/login',
+      payload: { account: 'carol', password: 'newpass-456' },
+    });
+    expect(newLogin.statusCode).toBe(200);
+    expect(newLogin.json().user.username).toBe('carol');
+  });
+
   it('统计接口', async () => {
     app = await makeApp();
     const cookies = await adminSession(app);

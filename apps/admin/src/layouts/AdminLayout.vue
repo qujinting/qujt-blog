@@ -23,6 +23,20 @@
         <router-view />
       </n-layout-content>
     </n-layout>
+
+    <n-modal v-model:show="showPwd" preset="card" title="修改密码" style="width:420px;">
+      <n-form>
+        <n-form-item label="原密码"><n-input v-model:value="oldPassword" type="password" show-password-on="click" /></n-form-item>
+        <n-form-item label="新密码"><n-input v-model:value="newPassword" type="password" show-password-on="click" placeholder="至少 8 位" /></n-form-item>
+        <n-form-item label="确认新密码"><n-input v-model:value="newPassword2" type="password" show-password-on="click" /></n-form-item>
+      </n-form>
+      <template #footer>
+        <n-space justify="end">
+          <n-button @click="showPwd = false">取消</n-button>
+          <n-button type="primary" :loading="pwdLoading" @click="confirmPwd">确定</n-button>
+        </n-space>
+      </template>
+    </n-modal>
   </n-layout>
 </template>
 
@@ -32,6 +46,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useMessage } from 'naive-ui';
 import { useAppStore } from '../stores/app.js';
 import { useAuthStore } from '../stores/auth.js';
+import { authApi } from '../api/index.js';
 
 const route = useRoute();
 const router = useRouter();
@@ -39,6 +54,12 @@ const app = useAppStore();
 const auth = useAuthStore();
 const message = useMessage();
 const collapsed = ref(false);
+
+const showPwd = ref(false);
+const oldPassword = ref('');
+const newPassword = ref('');
+const newPassword2 = ref('');
+const pwdLoading = ref(false);
 
 const menuOptions = computed(() => {
   const base = [
@@ -70,13 +91,44 @@ function onSelect(key: string) {
   router.push('/' + key);
 }
 
-const userMenuOptions = [{ key: 'logout', label: '退出登录' }];
+const userMenuOptions = [
+  { key: 'change-password', label: '修改密码' },
+  { type: 'divider', key: 'd1' },
+  { key: 'logout', label: '退出登录' },
+];
 
 async function onUserSelect(key: string) {
+  if (key === 'change-password') {
+    showPwd.value = true;
+    oldPassword.value = newPassword.value = newPassword2.value = '';
+    return;
+  }
   if (key === 'logout') {
     await auth.logout();
     message.success('已退出登录');
     router.push('/login');
+  }
+}
+
+async function confirmPwd() {
+  if (newPassword.value.length < 8) {
+    message.warning('新密码至少 8 位');
+    return;
+  }
+  if (newPassword.value !== newPassword2.value) {
+    message.warning('两次输入的密码不一致');
+    return;
+  }
+  pwdLoading.value = true;
+  try {
+    await authApi.changePassword(oldPassword.value, newPassword.value);
+    message.success('密码修改成功');
+    showPwd.value = false;
+    oldPassword.value = newPassword.value = newPassword2.value = '';
+  } catch (e) {
+    message.error((e as Error).message);
+  } finally {
+    pwdLoading.value = false;
   }
 }
 </script>

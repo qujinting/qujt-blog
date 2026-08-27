@@ -35,6 +35,7 @@ const DEFAULT_CFG: AppConfig = {
   JWT_EXPIRES_IN: '2h',
   REFRESH_EXPIRES_DAYS: 30,
   ADMIN_USERNAME: 'admin',
+  COOKIE_PATH: '/',
 };
 
 export async function buildApp(opts: AppOptions = {}): Promise<FastifyInstance> {

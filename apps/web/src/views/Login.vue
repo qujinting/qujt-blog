@@ -14,7 +14,7 @@
       <div class="csr-field">
         <label class="csr-label">账号</label>
         <n-input v-model:value="form.account" placeholder="用户名或邮箱" size="large" :round="true" :status="errors.account ? 'error' : undefined" @focus="isTyping = false" />
-        <p v-if="errors.account" class="csr-error">{{ errors.account }}</p>
+        <p class="csr-error" :class="{ 'is-empty': !errors.account }">{{ errors.account }}</p>
       </div>
 
       <div class="csr-field">
@@ -36,7 +36,7 @@
             </n-button>
           </template>
         </n-input>
-        <p v-if="errors.password" class="csr-error">{{ errors.password }}</p>
+        <p class="csr-error" :class="{ 'is-empty': !errors.password }">{{ errors.password }}</p>
       </div>
 
       <div v-if="errorMessage" class="csr-alert">{{ errorMessage }}</div>

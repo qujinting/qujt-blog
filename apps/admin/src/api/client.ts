@@ -1,6 +1,8 @@
 import axios from 'axios';
 
-export const api = axios.create({ baseURL: '/api', withCredentials: true });
+const API_BASE: string = import.meta.env.VITE_API_BASE || '/api';
+
+export const api = axios.create({ baseURL: API_BASE, withCredentials: true });
 
 // 管理端 CSRF 头
 api.interceptors.request.use((cfg) => {
@@ -18,11 +20,11 @@ api.interceptors.response.use(
     if (status === 401 && url && url !== '/auth/login' && url !== '/auth/refresh' && !config?._retried) {
       config._retried = true;
       try {
-        await axios.post('/api/auth/refresh', undefined, { withCredentials: true });
+        await axios.post(API_BASE + '/auth/refresh', undefined, { withCredentials: true });
         return api(config);
       } catch {
-        if (!window.location.pathname.startsWith('/admin/login')) {
-          window.location.href = '/admin/login';
+        if (!window.location.pathname.startsWith(import.meta.env.BASE_URL + 'login')) {
+          window.location.href = import.meta.env.BASE_URL + 'login';
         }
       }
     }

@@ -63,8 +63,8 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
   app.post('/logout', async (req, reply) => {
     const raw = req.cookies.refresh_token;
     if (raw) revokeRefreshByRaw(app.db, raw);
-    reply.clearCookie('access_token', { path: '/' });
-    reply.clearCookie('refresh_token', { path: '/' });
+    reply.clearCookie('access_token', { path: app.cfg.COOKIE_PATH });
+    reply.clearCookie('refresh_token', { path: app.cfg.COOKIE_PATH });
     return { ok: true };
   });
 

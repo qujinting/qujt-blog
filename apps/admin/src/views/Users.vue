@@ -5,6 +5,20 @@
       <n-button @click="load(1)">搜索</n-button>
     </n-space>
     <n-data-table :columns="columns" :data="items" :loading="loading" :bordered="false" :pagination="pagination" />
+
+    <n-modal v-model:show="showReset" preset="card" title="重置密码" style="width:420px;">
+      <n-form>
+        <n-form-item label="用户"><n-input :value="resetTarget?.username || ''" disabled /></n-form-item>
+        <n-form-item label="新密码"><n-input v-model:value="resetPassword" type="password" show-password-on="click" placeholder="至少 8 位" /></n-form-item>
+        <n-form-item label="确认新密码"><n-input v-model:value="resetPassword2" type="password" show-password-on="click" placeholder="再次输入" /></n-form-item>
+      </n-form>
+      <template #footer>
+        <n-space justify="end">
+          <n-button @click="showReset = false">取消</n-button>
+          <n-button type="primary" :loading="resetLoading" @click="confirmReset">确定</n-button>
+        </n-space>
+      </template>
+    </n-modal>
   </n-card>
 </template>
 
@@ -21,6 +35,12 @@ const items = ref<UserListRow[]>([]);
 const loading = ref(false);
 const q = ref('');
 const pagination = reactive({ page: 1, pageSize: 20, itemCount: 0 });
+
+const showReset = ref(false);
+const resetTarget = ref<UserListRow | null>(null);
+const resetPassword = ref('');
+const resetPassword2 = ref('');
+const resetLoading = ref(false);
 
 async function load(page = pagination.page) {
   loading.value = true;
@@ -41,10 +61,19 @@ const actionOptions = [
   { type: 'divider', key: 'd1' },
   { label: '禁用账号', key: 'disabled' },
   { label: '启用账号', key: 'active' },
+  { type: 'divider', key: 'd2' },
+  { label: '重置密码', key: 'reset-password' },
 ];
 
 async function onAction(key: string, row: UserListRow) {
   try {
+    if (key === 'reset-password') {
+      resetTarget.value = row;
+      resetPassword.value = '';
+      resetPassword2.value = '';
+      showReset.value = true;
+      return;
+    }
     if (key === 'author' || key === 'admin' || key === 'user') {
       await usersApi.update(row.id, { role: key });
       message.success('已更新角色');
@@ -55,6 +84,29 @@ async function onAction(key: string, row: UserListRow) {
     await load();
   } catch (e) {
     message.error((e as Error).message);
+  }
+}
+
+async function confirmReset() {
+  if (!resetTarget.value) return;
+  if (resetPassword.value.length < 8) {
+    message.warning('新密码至少 8 位');
+    return;
+  }
+  if (resetPassword.value !== resetPassword2.value) {
+    message.warning('两次输入的密码不一致');
+    return;
+  }
+  resetLoading.value = true;
+  try {
+    await usersApi.resetPassword(resetTarget.value.id, resetPassword.value);
+    message.success(`已重置 ${resetTarget.value.username} 的密码`);
+    showReset.value = false;
+    await load();
+  } catch (e) {
+    message.error((e as Error).message);
+  } finally {
+    resetLoading.value = false;
   }
 }
 

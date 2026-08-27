@@ -6,6 +6,7 @@ export const authApi = {
   me: () => get<{ user: UserDTO }>('/auth/me'),
   login: (account: string, password: string) => post<{ user: UserDTO }>('/auth/login', { account, password }),
   logout: () => post<{ ok: boolean }>('/auth/logout'),
+  changePassword: (oldPassword: string, newPassword: string) => post<{ ok: boolean }>('/auth/me/password', { oldPassword, newPassword }),
 };
 
 export const statsApi = { get: () => get<Stats>('/admin/stats') };
@@ -18,6 +19,7 @@ export const settingsApi = {
 export const usersApi = {
   list: (params?: { page?: number; pageSize?: number; q?: string }) => get<{ items: UserListRow[]; total: number }>('/admin/users', params),
   update: (id: number, patch: { role?: string; status?: string }) => put<{ ok: boolean }>('/admin/users/' + id, patch),
+  resetPassword: (id: number, password: string) => post<{ ok: boolean }>('/admin/users/' + id + '/password', { password }),
 };
 
 export const postsApi = {

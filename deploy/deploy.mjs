@@ -29,9 +29,9 @@ function sshScript(script, { env = {} } = {}) {
 }
 
 console.log('==> 1/4 构建三端');
-run('pnpm', ['--filter', '@qujt/server', 'build']);
-run('pnpm', ['--filter', '@qujt/web', 'build']);
-run('pnpm', ['--filter', '@qujt/admin', 'build']);
+run('pnpm', ['--filter', '@qujt/server', 'build'], { shell: true });
+run('pnpm', ['--filter', '@qujt/web', 'build'], { shell: true });
+run('pnpm', ['--filter', '@qujt/admin', 'build'], { shell: true });
 
 console.log('==> 2/4 打包');
 const bundle = path.join(os.tmpdir(), 'qujt-release');
@@ -39,7 +39,7 @@ rmSync(bundle, { recursive: true, force: true });
 mkdirSync(path.join(bundle, 'apps', 'server', 'data'), { recursive: true });
 cpSync(path.join(ROOT, 'apps', 'server', 'dist'), path.join(bundle, 'apps', 'server', 'dist'), { recursive: true });
 cpSync(path.join(ROOT, 'apps', 'server', 'package.json'), path.join(bundle, 'apps', 'server', 'package.json'));
-cpSync(path.join(ROOT, 'apps', 'server', 'backup.mjs'), path.join(bundle, 'apps', 'server', 'backup.mjs'));
+cpSync(path.join(ROOT, 'deploy', 'backup.mjs'), path.join(bundle, 'apps', 'server', 'backup.mjs'));
 cpSync(path.join(ROOT, 'apps', 'web', 'dist'), path.join(bundle, 'apps', 'web', 'dist'), { recursive: true });
 cpSync(path.join(ROOT, 'apps', 'admin', 'dist'), path.join(bundle, 'apps', 'admin', 'dist'), { recursive: true });
 cpSync(path.join(ROOT, 'deploy', 'nginx.conf'), path.join(bundle, 'deploy', 'nginx.conf'));
@@ -68,12 +68,13 @@ const script = [
   '  echo "HOST=127.0.0.1" >> apps/server/.env',
   '  echo "PORT=3000" >> apps/server/.env',
   '  echo "DATABASE_PATH=data/qujt.db" >> apps/server/.env',
-  '  echo "JWT_SECRET=$(node -e 'console.log(require("crypto").randomBytes(32).toString("hex"))')" >> apps/server/.env',
+  `  echo "JWT_SECRET=$(node -e 'console.log(require("crypto").randomBytes(32).toString("hex"))')" >> apps/server/.env`,
   '  echo "ADMIN_USERNAME=admin" >> apps/server/.env',
   '  echo "ADMIN_PASSWORD=' + '$' + '{ADMIN_PASSWORD:?首次部署需设置 ADMIN_PASSWORD 环境变量}' + '" >> apps/server/.env',
   'fi',
   'pm2 restart qujt-api --update-env || pm2 start deploy/ecosystem.config.js',
   'pm2 save',
+  'cp deploy/nginx.conf /etc/nginx/sites-available/qujt-blog',
   'nginx -t && systemctl reload nginx',
   'echo DEPLOY_DONE',
 ].join('\n');

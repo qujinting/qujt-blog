@@ -17,13 +17,13 @@
         <div class="csr-field">
           <label class="csr-label">用户名</label>
           <n-input v-model:value="form.username" placeholder="3-20 位字母/数字/下划线" size="large" :round="true" :status="errors.username ? 'error' : undefined" />
-          <p v-if="errors.username" class="csr-error">{{ errors.username }}</p>
+          <p class="csr-error" :class="{ 'is-empty': !errors.username }">{{ errors.username }}</p>
         </div>
 
         <div class="csr-field">
           <label class="csr-label">邮箱</label>
           <n-input v-model:value="form.email" placeholder="example@mail.com" size="large" :round="true" :status="errors.email ? 'error' : undefined" />
-          <p v-if="errors.email" class="csr-error">{{ errors.email }}</p>
+          <p class="csr-error" :class="{ 'is-empty': !errors.email }">{{ errors.email }}</p>
         </div>
 
         <div class="csr-field">
@@ -44,13 +44,13 @@
               </n-button>
             </template>
           </n-input>
-          <p v-if="errors.password" class="csr-error">{{ errors.password }}</p>
+          <p class="csr-error" :class="{ 'is-empty': !errors.password }">{{ errors.password }}</p>
         </div>
 
         <div v-if="mode === 'invite'" class="csr-field">
           <label class="csr-label">邀请码</label>
           <n-input v-model:value="form.inviteCode" placeholder="请输入邀请码" size="large" :round="true" :status="errors.inviteCode ? 'error' : undefined" />
-          <p v-if="errors.inviteCode" class="csr-error">{{ errors.inviteCode }}</p>
+          <p class="csr-error" :class="{ 'is-empty': !errors.inviteCode }">{{ errors.inviteCode }}</p>
         </div>
 
         <div v-if="errorMessage" class="csr-alert">{{ errorMessage }}</div>

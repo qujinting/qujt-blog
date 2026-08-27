@@ -9,6 +9,7 @@ const EnvSchema = z.object({
   JWT_SECRET: z.string().min(16).optional(),
   JWT_EXPIRES_IN: z.string().default('2h'),
   REFRESH_EXPIRES_DAYS: z.coerce.number().int().min(1).max(365).default(30),
+  COOKIE_PATH: z.string().default('/'),
   ADMIN_USERNAME: z.string().min(2).default('admin'),
   ADMIN_PASSWORD: z.string().min(8).optional(),
   ADMIN_EMAIL: z.email().optional(),
@@ -28,6 +29,7 @@ export interface AppConfig {
   JWT_SECRET: string;
   JWT_EXPIRES_IN: string;
   REFRESH_EXPIRES_DAYS: number;
+  COOKIE_PATH: string;
   ADMIN_USERNAME: string;
   ADMIN_PASSWORD?: string;
   ADMIN_EMAIL?: string;

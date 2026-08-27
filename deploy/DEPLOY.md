@@ -62,3 +62,80 @@ node deploy/deploy.mjs            # 或 ADMIN_PASSWORD=xxx node deploy/deploy.mj
 
 - 2C2G 服务器**不执行构建**，产物一律本地构建后上传。
 - `.env` 只在首次生成；若需修改（如换 OSS Key），直接编辑服务器 `/opt/qujt-blog/apps/server/.env` 后 `pm2 restart qujt-api`。
+
+---
+
+# 测试环境（P1，与生产共用同一台服务器）
+
+测试环境与生产**共用同一台服务器**，但业务上完全隔离：
+
+- 独立 API 进程 `qujt-api-test`（端口 3001）+ 独立测试库 `apps/server/data/test.db`
+- 前台 `http://IP/test/`、后台 `http://IP/test/admin/`（写入 `apps/test-web`、`apps/test-admin`，不覆盖生产前端）
+- 测试前端通过 `/test/api/*` 反代到本机 3001；会话 Cookie 限定在 `/test` 路径，与生产会话互不干扰
+
+> 注意：测试环境复用生产服务器上的 OSS 配置（媒体会上传到同一 OSS Bucket）。如需隔离媒体，请在 `deploy/ecosystem.test.config.js` 的测试进程里单独配置 `OSS_*`（`OSS_BUCKET` 等）。
+
+## 部署测试环境
+
+项目根目录（本地）执行：
+
+```bash
+node deploy/deploy-test.mjs            # 或 node deploy/deploy-test.mjs 115.29.149.137
+```
+
+脚本自动：构建 server + 测试前台(base=`/test/`) + 测试后台(base=`/test/admin/`) → 上传到服务器 → 启动/重启 `qujt-api-test` → 写入 Nginx 的 `/test` 路由并 reload。
+
+## 首次访问
+
+- 前台：`http://115.29.149.137/test`
+- 后台：`http://115.29.149.137/test/admin`
+- 测试管理员：默认 `admin`，初始密码在部署完成时打印（下次部署可用 `TEST_ADMIN_PASSWORD=xxx node deploy/deploy-test.mjs` 覆盖）
+
+## 重新部署 / 更新
+
+```bash
+node deploy/deploy-test.mjs            # 幂等：会自动 restart qujt-api-test 并同步 Nginx
+```
+
+## 常用运维
+
+| 操作 | 命令 |
+|---|---|
+| 查看测试 API 日志 | `pm2 logs qujt-api-test` |
+| 重启测试 API | `pm2 restart qujt-api-test` |
+| 测试库 | `/opt/qujt-blog/apps/server/data/test.db` |
+
+## 移除测试环境
+
+```bash
+ssh -i ~/.ssh/qujt-deploy-key root@115.29.149.137
+pm2 delete qujt-api-test && pm2 save
+# 删除 Nginx 配置中的 /test 相关 location 后 reload nginx
+```
+
+> 生产环境不受影响：`deploy.mjs` 只管理 `qujt-api`，`deploy-test.mjs` 只管理 `qujt-api-test` 与 `/test` 路由；测试前端写入 `apps/test-web`、`apps/test-admin`，不会覆盖生产 `apps/web/dist`、`apps/admin/dist`。
+
+---
+
+## 本地开发：切换后端 / 数据库
+
+前端 `web` / `admin` 的 dev 代理和 API 基址按 **Vite mode** 切换（`vite.config.ts`）：
+
+| 命令 | 说明 | `/api` 流向 |
+|---|---|---|
+| `pnpm dev` | 本地沙箱（默认） | 本地后台 `127.0.0.1:3000`（本地 SQLite） |
+| `pnpm dev:test` | 本地前端连线上测试 API | `/test/api` → `http://115.29.149.137`（测试库 `data/test.db`） |
+
+> `dev:test` 时前端走 `/test/api`（不是 `/api`），因为测试 API 的登录 Cookie 限定在 `/test` 路径（`COOKIE_PATH=/test`），路径必须匹配才能带上会话；代理目标可通过 `VITE_TEST_HOST` 覆盖（默认 `115.29.149.137`）。
+
+### 本地沙箱用真实测试数据（可选）
+
+从测试服拉取一份一致性快照到本地沙箱库（旧库自动备份为 `.bak`）：
+
+```bash
+node deploy/fetch-test-db.mjs
+```
+
+会覆盖本地 `.env` 中 `DATABASE_PATH` 指向的库（默认 `apps/server/data/qujt.db`）；拉取前请先停止本地后台，拉完后 `pnpm dev` 重启即可用测试数据调试。
+
+> 说明：项目后台是内嵌 SQLite（`better-sqlite3`），无法跨机器直接连远程库，所以“本地后台 + 线上测试库同步实时”不可行——`fetch-test-db.mjs` 是**一次性快照**，本地写入不会回传测试服；想要实时共享数据请直接用 `/test`、`/test/admin`。

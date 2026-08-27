@@ -105,3 +105,12 @@ export function updateUserProfile(db: Database.Database, id: number, patch: { ni
   db.prepare("UPDATE users SET nickname = ?, avatar = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = ?").run(nickname, avatar, id);
   return findUserById(db, id)!;
 }
+
+/** 设置用户密码（管理员重置他人/自己用），并更新 updated_at */
+export async function setUserPassword(db: Database.Database, id: number, password: string): Promise<void> {
+  const hash = await hashPassword(password);
+  const res = db
+    .prepare("UPDATE users SET password_hash = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = ?")
+    .run(hash, id);
+  if (!res.changes) throw new AppError(404, 'USER_NOT_FOUND', '用户不存在');
+}
