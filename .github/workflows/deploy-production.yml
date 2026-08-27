@@ -23,7 +23,7 @@ jobs:
         with:
           node-version: 22.14.0
           cache: pnpm
-      - run: pnpm install --frozen-lockfile
+      - run: pnpm install --frozen-lockfile --config.allowBuilds.better-sqlite3=true
       - run: pnpm test
       - run: pnpm typecheck
       - run: pnpm build:server
