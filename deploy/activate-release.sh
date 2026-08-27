@@ -75,7 +75,7 @@ for attempt in {1..20}; do
 done
 
 cron_line='0 3 * * * /usr/local/bin/node /opt/qujt-blog/current/apps/server/backup.mjs >> /var/log/qujt-backup.log 2>&1'
-( crontab -l 2>/dev/null | grep -v '/qujt-blog/.*/apps/server/backup.mjs' || true; echo "$cron_line" ) | crontab -
+( crontab -l 2>/dev/null | grep -v '/opt/qujt-blog/.*apps/server/backup.mjs' || true; echo "$cron_line" ) | crontab -
 
 echo "$RELEASE_ID" > "$ROOT/DEPLOYED_RELEASE"
 mapfile -t old_releases < <(find "$RELEASES" -mindepth 1 -maxdepth 1 -type d ! -name '.incoming-*' -printf '%T@ %p\n' | sort -nr | tail -n +$((KEEP_RELEASES + 1)) | cut -d' ' -f2-)

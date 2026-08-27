@@ -7,6 +7,7 @@ LEGACY="$ROOT"
 RELEASE_ID="legacy-$(date -u +%Y%m%d%H%M%S)"
 TARGET="$ROOT/releases/$RELEASE_ID"
 mkdir -p "$TARGET/apps/server" "$TARGET/apps/web" "$TARGET/apps/admin" "$TARGET/packages" "$TARGET/deploy" "$ROOT/shared/data" "$ROOT/shared/backups"
+chmod 750 "$ROOT/shared/data" "$ROOT/shared/backups"
 pm2 stop qujt-api qujt-api-test >/dev/null 2>&1 || true
 trap 'pm2 restart qujt-api qujt-api-test >/dev/null 2>&1 || true' ERR
 cp -a "$LEGACY/apps/server/.env" "$ROOT/shared/server.env"
@@ -36,7 +37,7 @@ pm2 restart qujt-api-test >/dev/null 2>&1 || true
 pm2 save
 systemctl reload nginx
 cron_line='0 3 * * * /usr/local/bin/node /opt/qujt-blog/current/apps/server/backup.mjs >> /var/log/qujt-backup.log 2>&1'
-( crontab -l 2>/dev/null | grep -v '/qujt-blog/.*/apps/server/backup.mjs' || true; echo "$cron_line" ) | crontab -
+( crontab -l 2>/dev/null | grep -v '/opt/qujt-blog/.*apps/server/backup.mjs' || true; echo "$cron_line" ) | crontab -
 curl -fsS --retry 10 --retry-delay 1 --retry-connrefused http://127.0.0.1/api/health >/dev/null
 echo "$RELEASE_ID" > "$ROOT/DEPLOYED_RELEASE"
 echo "LEGACY_MIGRATED=$RELEASE_ID"
