@@ -19,7 +19,7 @@
           <button v-if="!auth.user" class="btn btn-secondary" @click="goLogin">登录</button>
           <button v-else class="nav-user" @click="logout" aria-haspopup="true" aria-expanded="false">
             <span class="avatar sm">{{ auth.user.nickname.charAt(0).toUpperCase() }}</span>
-            <span class="who"><b>{{ auth.user.nickname }}</b><span>已登录</span></span>
+            <span class="who"><b>{{ auth.user.nickname }}</b></span>
           </button>
           <button class="icon-btn menu-toggle" @click="mobileOpen = !mobileOpen" aria-label="打开菜单">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
